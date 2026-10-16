@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import { existsSync } from 'fs';
 
 /**
  * Options for a single git invocation.
@@ -103,7 +104,9 @@ export class GitRunner {
       const child = spawn(this.gitPath, fullArgs, {
         cwd: options.cwd,
         env: { ...process.env, ...HARDENED_ENV, ...this.env, ...options.extraEnv },
-        stdio: ['pipe', 'pipe', 'pipe'],
+        // Without input, stdin is not opened at all: writing to a pipe git
+        // has already closed raises SIGPIPE in the extension host.
+        stdio: [options.stdin === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
         windowsHide: true,
       });
 
@@ -128,15 +131,18 @@ export class GitRunner {
         }
       };
 
-      child.stdout.on('data', (chunk: Buffer) => stdout.push(chunk));
-      child.stderr.on('data', (chunk: Buffer) => stderr.push(chunk));
+      child.stdout?.on('data', (chunk: Buffer) => stdout.push(chunk));
+      child.stderr?.on('data', (chunk: Buffer) => stderr.push(chunk));
 
       child.on('error', (error: NodeJS.ErrnoException) => {
         finish(() => {
-          const message =
-            error.code === 'ENOENT'
+          let message = `Failed to run git: ${error.message}`;
+          if (error.code === 'ENOENT') {
+            // spawn reports a missing working directory as ENOENT too.
+            message = existsSync(options.cwd)
               ? `Git was not found at "${this.gitPath}". Install git or set "git.path".`
-              : `Failed to run git: ${error.message}`;
+              : `The folder "${options.cwd}" does not exist.`;
+          }
           reject(new GitError(message, args, undefined, ''));
         });
       });
@@ -154,10 +160,12 @@ export class GitRunner {
         });
       });
 
-      // git may exit before reading all of stdin (EPIPE); the exit code
-      // reports the real outcome, so stdin errors are ignored.
-      child.stdin.on('error', () => undefined);
-      child.stdin.end(options.stdin ?? '');
+      if (child.stdin) {
+        // git may exit before reading all of stdin (EPIPE); the exit code
+        // reports the real outcome, so stdin errors are ignored.
+        child.stdin.on('error', () => undefined);
+        child.stdin.end(options.stdin);
+      }
     });
   }
 

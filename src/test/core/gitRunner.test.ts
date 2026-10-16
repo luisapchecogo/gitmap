@@ -57,6 +57,13 @@ suite('GitRunner', () => {
     );
   });
 
+  test('reports a missing working directory', async () => {
+    await assert.rejects(
+      runner.exec(['version'], { cwd: `${repo.root}-missing` }),
+      (error: unknown) => error instanceof GitError && /does not exist/.test(error.message),
+    );
+  });
+
   test('aborting kills the process', async () => {
     const controller = new AbortController();
     // Abort right after spawning, before git can finish on its own.
