@@ -134,6 +134,57 @@ export class GitRepository {
     return parseLog(output);
   }
 
+  /**
+   * Commits matching `query`, newest first, at most `limit`: the commit the
+   * query names (a full or short hash, a branch, `HEAD~2`, ...), plus
+   * commits reachable from `tips` whose message or author contains the
+   * query (case-insensitive, taken literally rather than as a pattern).
+   */
+  async searchCommits(
+    query: string,
+    tips: readonly string[],
+    limit: number,
+    options: RepoCallOptions = {},
+  ): Promise<{ hashes: string[]; truncated: boolean }> {
+    const text = query.trim();
+    if (!text) {
+      return { hashes: [], truncated: false };
+    }
+    const stdin = tips.join('\n') + '\n';
+    const find = async (filter: string): Promise<{ hash: string; time: number }[]> => {
+      if (tips.length === 0) {
+        return [];
+      }
+      const output = await this.text(
+        ['log', '-z', '--format=%H %ct', '--regexp-ignore-case', '--fixed-strings', filter, `--max-count=${limit + 1}`, '--stdin'],
+        { ...options, stdin },
+      );
+      return output
+        .split('\0')
+        .filter((line) => line)
+        .map((line) => {
+          const [hash, time] = line.trim().split(' ');
+          return { hash, time: Number(time) };
+        });
+    };
+    const named = async (): Promise<{ hash: string; time: number }[]> => {
+      const hash = await this.resolveCommit(text, options);
+      if (!hash) {
+        return [];
+      }
+      const time = await this.text(['show', '-s', '--format=%ct', hash], options);
+      return [{ hash, time: Number(time.trim()) }];
+    };
+
+    const results = await Promise.all([named(), find(`--grep=${text}`), find(`--author=${text}`)]);
+    const byHash = new Map<string, number>();
+    for (const { hash, time } of results.flat()) {
+      byHash.set(hash, time);
+    }
+    const sorted = [...byHash].sort((a, b) => b[1] - a[1]).map(([hash]) => hash);
+    return { hashes: sorted.slice(0, limit), truncated: sorted.length > limit };
+  }
+
   /** Number of commits reachable from the tips. */
   async countCommits(tips: readonly string[], options: RepoCallOptions = {}): Promise<number> {
     if (tips.length === 0) {

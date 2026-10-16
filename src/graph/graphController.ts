@@ -11,6 +11,12 @@ export interface GraphSink {
   post(message: HostMessage): void;
 }
 
+/** Most search results reported. */
+export const SEARCH_LIMIT = 200;
+
+/** How far reveal() pages forward looking for a commit. */
+export const REVEAL_LIMIT = 10_000;
+
 export interface GraphSettings {
   pageSize(): number;
   commitOrder(): CommitOrder;
@@ -52,6 +58,7 @@ export class GraphController {
   private layout = new LaneLayout();
   private load: AbortController | undefined;
   private pageLoad: Promise<void> | undefined;
+  private searchLoad: AbortController | undefined;
 
   constructor(private readonly settings: GraphSettings) {}
 
@@ -177,8 +184,62 @@ export class GraphController {
     return this.pageLoad;
   }
 
+  /**
+   * Finds commits by hash/revision, message or author within the current
+   * filter, and sends the matches. A newer search cancels an older one.
+   */
+  async search(query: string): Promise<void> {
+    this.searchLoad?.abort();
+    const repository = this.repository;
+    if (!repository || !query.trim()) {
+      this.sink?.post({ type: 'searchResults', query, matches: [], truncated: false });
+      return;
+    }
+    const controller = new AbortController();
+    this.searchLoad = controller;
+    try {
+      const { hashes, truncated } = await repository.searchCommits(query, this.tips, SEARCH_LIMIT, { signal: controller.signal });
+      if (this.searchLoad === controller) {
+        this.sink?.post({ type: 'searchResults', query, matches: hashes, truncated });
+      }
+    } catch (error) {
+      if (this.searchLoad === controller && !isCancellation(error)) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.sink?.post({ type: 'searchResults', query, matches: [], truncated: false, error: message });
+      }
+    }
+  }
+
+  /**
+   * Makes sure a commit is in the loaded rows, paging forward up to
+   * REVEAL_LIMIT rows, then tells the webview whether it can scroll to it.
+   */
+  async reveal(hash: string): Promise<void> {
+    const generation = this.generation;
+    const loaded = (): boolean => this.rows.some((row) => row.hash === hash);
+    while (!loaded() && this.hasMore && this.rows.length < REVEAL_LIMIT && generation === this.generation) {
+      const before = this.rows.length;
+      await this.loadMore(generation);
+      if (this.rows.length === before) {
+        break;
+      }
+    }
+    if (generation !== this.generation) {
+      return;
+    }
+    if (loaded()) {
+      this.sink?.post({ type: 'reveal', hash, found: true });
+    } else {
+      const message = this.hasMore
+        ? `${shortHash(hash)} is more than ${REVEAL_LIMIT.toLocaleString('en-US')} commits down; narrow the graph to a branch to reach it.`
+        : `${shortHash(hash)} is not in the commits shown. Try "All branches" or turning on remote branches.`;
+      this.sink?.post({ type: 'reveal', hash, found: false, message });
+    }
+  }
+
   dispose(): void {
     this.load?.abort();
+    this.searchLoad?.abort();
     this.sink = undefined;
   }
 

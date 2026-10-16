@@ -90,6 +90,12 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
       case 'openCommit':
         void vscode.commands.executeCommand('gitmap.graph.showCommitChanges', { hash: message.hash });
         break;
+      case 'search':
+        void this.controller.search(String(message.query));
+        break;
+      case 'reveal':
+        void this.controller.reveal(String(message.hash));
+        break;
     }
   }
 }

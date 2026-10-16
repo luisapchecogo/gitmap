@@ -6,6 +6,7 @@ import { GraphStatus, HostMessage, WebviewMessage } from '../shared/protocol';
 import { CommitList } from './commitList';
 import { h, icon } from './dom';
 import { Footer } from './footer';
+import { SearchBox } from './search';
 import { Toolbar } from './toolbar';
 
 const vscode = acquireVsCodeApi();
@@ -19,6 +20,10 @@ let status: GraphStatus = { kind: 'searching' };
 
 const app = document.getElementById('app') as HTMLElement;
 const toolbar = new Toolbar((command) => post({ type: 'command', command }));
+const search = new SearchBox({
+  search: (query) => post({ type: 'search', query }),
+  reveal: (hash) => post({ type: 'reveal', hash }),
+});
 const statusLine = h('div', 'status');
 statusLine.setAttribute('aria-live', 'polite');
 const placeholder = h('div', 'placeholder');
@@ -27,7 +32,15 @@ const list = new CommitList(
   (hash) => post({ type: 'openCommit', hash }),
 );
 const footer = new Footer((action) => post({ type: 'footer', action }));
-app.append(toolbar.element, statusLine, placeholder, list.element, footer.element);
+app.append(toolbar.element, search.element, statusLine, placeholder, list.element, footer.element);
+
+// Ctrl/Cmd+F in the graph focuses the search box.
+window.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
+    event.preventDefault();
+    search.focus();
+  }
+});
 
 function renderStatus(): void {
   placeholder.replaceChildren();
@@ -94,6 +107,15 @@ window.addEventListener('message', (event: MessageEvent<HostMessage>) => {
         hasMore = message.hasMore;
         list.append(message.rows, message.hasMore);
         renderStatus();
+      }
+      break;
+    case 'searchResults':
+      search.showResults(message.query, message.matches, message.truncated, message.error);
+      list.setMatches(search.matchSet);
+      break;
+    case 'reveal':
+      if (!message.found || !list.reveal(message.hash)) {
+        search.showMessage(message.message ?? 'This commit is not in the list.');
       }
       break;
     case 'total':

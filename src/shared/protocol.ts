@@ -82,6 +82,10 @@ export type HostMessage =
       total?: number;
     }
   | { type: 'append'; generation: number; rows: CommitRow[]; hasMore: boolean }
+  /** Commits matching a search, newest first. */
+  | { type: 'searchResults'; query: string; matches: string[]; truncated: boolean; error?: string }
+  /** A requested commit is loaded and can be scrolled to (or could not be found). */
+  | { type: 'reveal'; hash: string; found: boolean; message?: string }
   | { type: 'total'; generation: number; total: number };
 
 /** Webview → host. */
@@ -91,4 +95,7 @@ export type WebviewMessage =
   | { type: 'command'; command: ToolbarCommand }
   | { type: 'footer'; action: FooterAction }
   /** Double-click or Enter on a row: show that commit's changes. */
-  | { type: 'openCommit'; hash: string };
+  | { type: 'openCommit'; hash: string }
+  | { type: 'search'; query: string }
+  /** Load history until this commit is in the list, then report back. */
+  | { type: 'reveal'; hash: string };

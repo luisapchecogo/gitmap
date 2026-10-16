@@ -41,6 +41,7 @@ export class CommitList {
   private graphLanes = 1;
   private selected: string | undefined;
   private markers: { base?: string; target?: string } = {};
+  private matches: ReadonlySet<string> = new Set();
 
   constructor(
     private readonly onLoadMore: () => void,
@@ -87,6 +88,26 @@ export class CommitList {
     for (const row of this.rowsElement.children) {
       this.applyMarkers(row as HTMLElement);
     }
+  }
+
+  /** Highlights search matches. */
+  setMatches(matches: ReadonlySet<string>): void {
+    this.matches = matches;
+    for (const row of this.rowsElement.children) {
+      const element = row as HTMLElement;
+      element.classList.toggle('match', matches.has(element.dataset.hash ?? ''));
+    }
+  }
+
+  /** Selects and scrolls to a loaded commit. Returns false if it is not loaded. */
+  reveal(hash: string): boolean {
+    const row = this.rowsElement.querySelector<HTMLElement>(`.row[data-hash="${CSS.escape(hash)}"]`);
+    if (!row) {
+      return false;
+    }
+    this.select(row);
+    row.scrollIntoView({ block: 'center' });
+    return true;
   }
 
   reset(rows: readonly CommitRow[], hasMore: boolean): void {
@@ -208,6 +229,9 @@ export class CommitList {
     });
     if (row.hash === this.selected) {
       element.classList.add('selected');
+    }
+    if (this.matches.has(row.hash)) {
+      element.classList.add('match');
     }
 
     const graph = h('div', 'graph');
