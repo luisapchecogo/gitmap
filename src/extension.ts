@@ -26,6 +26,7 @@ export interface GitMapTestApi {
   changesTree: ChangesTreeProvider;
   graph: GraphController;
   footer: CompareFooter;
+  graphView: GraphViewProvider;
 }
 
 export function activate(context: vscode.ExtensionContext): GitMapTestApi {
@@ -91,7 +92,7 @@ export function activate(context: vscode.ExtensionContext): GitMapTestApi {
     new GraphAutoRefresh(session, graph, () => graphView.visible, graphView.onDidBecomeVisible),
   );
 
-  return { session, compareState: state, compareService: service, changesTree, graph, footer };
+  return { session, compareState: state, compareService: service, changesTree, graph, footer, graphView };
 }
 
 export function deactivate(): void {}
