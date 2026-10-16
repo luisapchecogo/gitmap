@@ -487,3 +487,16 @@ button:disabled {
     transform: rotate(360deg);
   }
 }
+
+/* High-contrast themes have no hover/selection fills: use outlines. */
+body.vscode-high-contrast .row:hover,
+body.vscode-high-contrast-light .row:hover {
+  outline: 1px dashed var(--vscode-contrastActiveBorder);
+  outline-offset: -1px;
+}
+
+body.vscode-high-contrast .row.selected,
+body.vscode-high-contrast-light .row.selected {
+  outline: 1px solid var(--vscode-contrastActiveBorder);
+  outline-offset: -1px;
+}
