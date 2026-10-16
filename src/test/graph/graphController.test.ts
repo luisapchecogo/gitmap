@@ -212,6 +212,28 @@ suite('GraphController', () => {
     }
   });
 
+  test('reloads only when refs or HEAD changed', async () => {
+    const moving = await TempRepo.create();
+    try {
+      await moving.commitFiles('one', { 'a.txt': '1\n' });
+      const controller = new GraphController(settings);
+      await controller.setRepository(new GitRepository(moving.root, new GitRunner({ env: moving.env })));
+      const generation = controller.currentGeneration;
+      assert.strictEqual(await controller.reloadIfChanged(), false);
+      assert.strictEqual(controller.currentGeneration, generation);
+
+      await moving.commitFiles('two', { 'a.txt': '2\n' });
+      assert.strictEqual(await controller.reloadIfChanged(), true);
+      assert.strictEqual(controller.loadedRows[0].subject, 'two');
+
+      await moving.git('switch', '--quiet', '-c', 'other');
+      assert.strictEqual(await controller.reloadIfChanged(), true, 'switching branches changes HEAD');
+      controller.dispose();
+    } finally {
+      await moving.dispose();
+    }
+  });
+
   test('reports git errors', async () => {
     const controller = new GraphController(settings);
     const sink = new RecordingSink();

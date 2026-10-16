@@ -130,3 +130,14 @@ export function selectTips(refs: readonly GitRef[], head: string | undefined, fi
   }
   return [...tips];
 }
+
+/**
+ * A string that changes whenever any branch, remote branch or tag moves,
+ * appears or disappears, or HEAD changes. Comparing fingerprints tells
+ * whether the graph is stale without reloading it.
+ */
+export function refsFingerprint(refs: readonly GitRef[], head: { commit?: string; branch?: string }): string {
+  const lines = refs.map((ref) => `${ref.fullName} ${ref.commit}`).sort();
+  lines.push(`HEAD ${head.commit ?? ''} ${head.branch ?? ''}`);
+  return lines.join('\n');
+}

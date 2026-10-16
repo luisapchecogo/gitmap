@@ -1,6 +1,6 @@
 import { LaneLayout } from '../core/graphLayout';
 import { CommitInfo } from '../core/logParser';
-import { GitRef, GraphFilter, refsByCommit, selectTips } from '../core/refsParser';
+import { GitRef, GraphFilter, refsByCommit, refsFingerprint, selectTips } from '../core/refsParser';
 import { isCancellation } from '../core/gitRunner';
 import { shortHash } from '../core/revision';
 import { CommitOrder, GitRepository } from '../git/repository';
@@ -53,6 +53,8 @@ export class GraphController {
   private tips: string[] = [];
   private badges = new Map<string, GitRef[]>();
   private headCommit: string | undefined;
+  /** Refs and HEAD as of the last load (see refsFingerprint). */
+  private loadedFingerprint: string | undefined;
   private filter: GraphFilter = { showRemotes: true };
   /** Lane state carried from page to page; recreated on every reload. */
   private layout = new LaneLayout();
@@ -77,6 +79,28 @@ export class GraphController {
   /** The filter of the current load (after falling back from a deleted branch). */
   get currentFilter(): GraphFilter {
     return this.filter;
+  }
+
+  /**
+   * Reloads if any ref or HEAD moved since the last load (a commit,
+   * checkout, fetch, rebase, ...). Cheap when nothing changed: one
+   * for-each-ref and one rev-parse.
+   */
+  async reloadIfChanged(): Promise<boolean> {
+    const repository = this.repository;
+    if (!repository || this.status.kind === 'loading') {
+      return false;
+    }
+    try {
+      const [refs, head] = await Promise.all([repository.getRefs(), repository.getHead()]);
+      if (repository !== this.repository || refsFingerprint(refs, head) === this.loadedFingerprint) {
+        return false;
+      }
+    } catch {
+      // Let a full reload report the error.
+    }
+    await this.reload();
+    return true;
   }
 
   /** Connects a renderer and replays the current state to it. */
@@ -153,6 +177,7 @@ export class GraphController {
         this.postToolbar();
       }
       this.tips = selectTips(refs, head.commit, this.filter);
+      this.loadedFingerprint = refsFingerprint(refs, head);
       this.badges = refsByCommit(refs);
       this.headCommit = head.commit;
       const page = await this.fetchPage(repository, 0, signal);

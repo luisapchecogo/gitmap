@@ -6,6 +6,7 @@ import { CompareService } from './compare/compareService';
 import { CompareState } from './compare/compareState';
 import { GitFileSystemProvider } from './compare/gitFileSystemProvider';
 import { GIT_SCHEME } from './compare/gitUri';
+import { GraphAutoRefresh } from './graph/autoRefresh';
 import { CompareFooter } from './graph/compareFooter';
 import { registerGraphCommands } from './graph/graphCommands';
 import { GraphController } from './graph/graphController';
@@ -82,7 +83,12 @@ export function activate(context: vscode.ExtensionContext): GitMapTestApi {
       }
     }),
     footer,
-    vscode.window.registerWebviewViewProvider(GRAPH_VIEW_ID, new GraphViewProvider(context.extensionUri, graph, footer)),
+  );
+  const graphView = new GraphViewProvider(context.extensionUri, graph, footer);
+  context.subscriptions.push(
+    graphView,
+    vscode.window.registerWebviewViewProvider(GRAPH_VIEW_ID, graphView),
+    new GraphAutoRefresh(session, graph, () => graphView.visible, graphView.onDidBecomeVisible),
   );
 
   return { session, compareState: state, compareService: service, changesTree, graph, footer };

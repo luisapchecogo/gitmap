@@ -20,8 +20,11 @@ const FOOTER_ACTIONS: ReadonlySet<FooterAction> = new Set<FooterAction>(['pickBa
  * Hosts the graph webview in the GitMap side bar. All state lives in the
  * GraphController; this class only connects a webview to it.
  */
-export class GraphViewProvider implements vscode.WebviewViewProvider {
+export class GraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
+  private readonly visibleEmitter = new vscode.EventEmitter<void>();
+  /** Fires when the view is shown (created, or revealed again). */
+  readonly onDidBecomeVisible = this.visibleEmitter.event;
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -58,6 +61,11 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
         this.handle(message, sink);
       }),
       this.footer.onDidChange(postFooter),
+      view.onDidChangeVisibility(() => {
+        if (view.visible) {
+          this.visibleEmitter.fire();
+        }
+      }),
       view.onDidDispose(() => {
         this.controller.detach(sink);
         if (this.view === view) {
@@ -68,11 +76,17 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
     ];
   }
 
+  dispose(): void {
+    this.visibleEmitter.dispose();
+  }
+
   private handle(message: WebviewMessage, sink: GraphSink): void {
     switch (message.type) {
       case 'ready':
-        // A new or reloaded webview: replay everything loaded so far.
+        // A new or reloaded webview: replay everything loaded so far, then
+        // check whether it is still current.
         this.controller.attach(sink);
+        this.visibleEmitter.fire();
         break;
       case 'loadMore':
         void this.controller.loadMore(message.generation);
