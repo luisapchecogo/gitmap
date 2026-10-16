@@ -1,7 +1,13 @@
 import * as vscode from 'vscode';
+import { ChangeDecorationProvider } from './compare/changeDecorations';
+import { ChangesTreeProvider } from './compare/changesTreeProvider';
+import { registerCompareCommands } from './compare/compareCommands';
+import { CompareService } from './compare/compareService';
+import { CompareState } from './compare/compareState';
 import { GitFileSystemProvider } from './compare/gitFileSystemProvider';
 import { GIT_SCHEME } from './compare/gitUri';
 import { Session } from './state/session';
+import { WorkspaceStore } from './state/workspaceStore';
 
 export function activate(context: vscode.ExtensionContext): void {
   const session = new Session(context);
@@ -18,15 +24,16 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
-  // Placeholder until the commit-comparison tree exists: an empty tree makes
-  // VS Code show the view's welcome content from package.json.
-  const emptyTree: vscode.TreeDataProvider<vscode.TreeItem> = {
-    getTreeItem: (item) => item,
-    getChildren: () => [],
-  };
-
+  const store = new WorkspaceStore(context.workspaceState);
+  const state = new CompareState(session, store);
+  const service = new CompareService();
+  const changesTree = new ChangesTreeProvider(service, session);
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('gitmap.compare', emptyTree),
+    state,
+    service,
+    changesTree,
+    vscode.window.registerFileDecorationProvider(new ChangeDecorationProvider()),
+    ...registerCompareCommands({ session, state, service }),
   );
 }
 

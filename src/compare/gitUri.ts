@@ -60,6 +60,11 @@ export function toChangeUri(path: string, status: ChangeStatus): vscode.Uri {
   return vscode.Uri.from({ scheme: CHANGE_SCHEME, path: `/${path}`, query: new URLSearchParams({ s: status }).toString() });
 }
 
+/** Builds the resource URI for a folder in the Changes tree (icon only, no decoration). */
+export function toChangeFolderUri(path: string): vscode.Uri {
+  return vscode.Uri.from({ scheme: CHANGE_SCHEME, path: `/${path}` });
+}
+
 /** Reads the status back from a Changes tree item URI. */
 export function changeStatusOf(uri: vscode.Uri): ChangeStatus | undefined {
   return (new URLSearchParams(uri.query).get('s') as ChangeStatus | null) ?? undefined;

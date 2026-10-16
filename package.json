@@ -32,6 +32,9 @@
     "onFileSystem:gitmap"
   ],
   "main": "./dist/extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": false,
@@ -56,14 +59,142 @@
       "gitmap": [
         {
           "id": "gitmap.compare",
-          "name": "Compare"
+          "name": "Changes"
         }
       ]
     },
     "viewsWelcome": [
       {
         "view": "gitmap.compare",
-        "contents": "GitMap is installed and running.\nCommit comparison is not implemented yet."
+        "contents": "Pick two revisions to see every file that changed between them.\n[Compare Revisions…](command:gitmap.compareRevisions)",
+        "when": "gitmap.hasRepository && !gitmap.hasComparison"
+      },
+      {
+        "view": "gitmap.compare",
+        "contents": "No git repository was found in this workspace. Open a folder that contains a git repository to compare its commits.",
+        "when": "!gitmap.hasRepository"
+      }
+    ],
+    "commands": [
+      {
+        "command": "gitmap.compareRevisions",
+        "title": "Compare Revisions…",
+        "category": "GitMap",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "gitmap.openChange",
+        "title": "Open Changes",
+        "category": "GitMap",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "gitmap.openFile",
+        "title": "Open File",
+        "category": "GitMap",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "gitmap.copyPath",
+        "title": "Copy Relative Path",
+        "category": "GitMap"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "gitmap.compareRevisions",
+          "when": "view == gitmap.compare",
+          "group": "navigation@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "gitmap.openFile",
+          "when": "view == gitmap.compare && viewItem == file",
+          "group": "inline"
+        },
+        {
+          "command": "gitmap.openChange",
+          "when": "view == gitmap.compare && viewItem == file",
+          "group": "1_open@1"
+        },
+        {
+          "command": "gitmap.openFile",
+          "when": "view == gitmap.compare && viewItem == file",
+          "group": "1_open@2"
+        },
+        {
+          "command": "gitmap.copyPath",
+          "when": "view == gitmap.compare && viewItem =~ /^(file|folder)$/",
+          "group": "2_copy@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "gitmap.openChange",
+          "when": "false"
+        },
+        {
+          "command": "gitmap.openFile",
+          "when": "false"
+        },
+        {
+          "command": "gitmap.copyPath",
+          "when": "false"
+        }
+      ]
+    },
+    "colors": [
+      {
+        "id": "gitmap.addedResourceForeground",
+        "description": "Color of added files in the GitMap Changes view.",
+        "defaults": {
+          "dark": "gitDecoration.addedResourceForeground",
+          "light": "gitDecoration.addedResourceForeground",
+          "highContrast": "gitDecoration.addedResourceForeground",
+          "highContrastLight": "gitDecoration.addedResourceForeground"
+        }
+      },
+      {
+        "id": "gitmap.modifiedResourceForeground",
+        "description": "Color of modified files in the GitMap Changes view.",
+        "defaults": {
+          "dark": "gitDecoration.modifiedResourceForeground",
+          "light": "gitDecoration.modifiedResourceForeground",
+          "highContrast": "gitDecoration.modifiedResourceForeground",
+          "highContrastLight": "gitDecoration.modifiedResourceForeground"
+        }
+      },
+      {
+        "id": "gitmap.deletedResourceForeground",
+        "description": "Color of deleted files in the GitMap Changes view.",
+        "defaults": {
+          "dark": "gitDecoration.deletedResourceForeground",
+          "light": "gitDecoration.deletedResourceForeground",
+          "highContrast": "gitDecoration.deletedResourceForeground",
+          "highContrastLight": "gitDecoration.deletedResourceForeground"
+        }
+      },
+      {
+        "id": "gitmap.renamedResourceForeground",
+        "description": "Color of renamed files in the GitMap Changes view.",
+        "defaults": {
+          "dark": "gitDecoration.renamedResourceForeground",
+          "light": "gitDecoration.renamedResourceForeground",
+          "highContrast": "gitDecoration.renamedResourceForeground",
+          "highContrastLight": "gitDecoration.renamedResourceForeground"
+        }
+      },
+      {
+        "id": "gitmap.untrackedResourceForeground",
+        "description": "Color of untracked files in the GitMap Changes view.",
+        "defaults": {
+          "dark": "gitDecoration.untrackedResourceForeground",
+          "light": "gitDecoration.untrackedResourceForeground",
+          "highContrast": "gitDecoration.untrackedResourceForeground",
+          "highContrastLight": "gitDecoration.untrackedResourceForeground"
+        }
       }
     ]
   },
