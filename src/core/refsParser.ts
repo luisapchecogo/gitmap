@@ -94,3 +94,39 @@ export function refsByCommit(refs: readonly GitRef[]): Map<string, GitRef[]> {
   }
   return map;
 }
+
+/** Which commits the graph shows. */
+export interface GraphFilter {
+  /** Full name of the one branch to show (`refs/heads/main`), or `undefined` for all. */
+  branch?: string;
+  /** Include remote-tracking branches when showing all branches. */
+  showRemotes: boolean;
+}
+
+/**
+ * The commits a graph load starts from. Resolving them once per load (and
+ * passing hashes, not ref names) keeps paging consistent even if a branch
+ * moves while the user scrolls.
+ *
+ * All branches: local branches, remote branches (optional), tags and HEAD
+ * (so a detached HEAD is visible). One branch: just that branch's tip.
+ */
+export function selectTips(refs: readonly GitRef[], head: string | undefined, filter: GraphFilter): string[] {
+  const tips = new Set<string>();
+  if (filter.branch) {
+    const branch = refs.find((ref) => ref.fullName === filter.branch);
+    if (branch) {
+      tips.add(branch.commit);
+    }
+    return [...tips];
+  }
+  if (head) {
+    tips.add(head);
+  }
+  for (const ref of refs) {
+    if (ref.kind !== 'remote' || filter.showRemotes) {
+      tips.add(ref.commit);
+    }
+  }
+  return [...tips];
+}

@@ -1,6 +1,7 @@
 import * as path from 'path';
 import { FileChange, LineStats, parseNumstat, parseRawDiff } from '../core/diffParser';
 import { GitExecOptions, GitResult, GitRunner } from '../core/gitRunner';
+import { CommitInfo, LOG_FORMAT, parseLog } from '../core/logParser';
 import { GitRef, parseRefs, REF_FORMAT, REF_PATTERNS } from '../core/refsParser';
 import { Revision, revisionLabel } from '../core/revision';
 
@@ -11,6 +12,17 @@ export interface HeadState {
   commit: string | undefined;
   /** Checked-out branch; `undefined` when HEAD is detached. */
   branch: string | undefined;
+}
+
+export type CommitOrder = 'date' | 'topo';
+
+export interface LogQuery {
+  /** Commit hashes to walk from (see selectTips). */
+  tips: readonly string[];
+  order: CommitOrder;
+  /** Commits to skip from the start of the walk. */
+  skip: number;
+  maxCount: number;
 }
 
 export interface ChangesRequest {
@@ -95,6 +107,40 @@ export class GitRepository {
       ),
     ]);
     return { commit, branch };
+  }
+
+  /**
+   * One page of history from the given tips, newest first. Tips go through
+   * stdin (`--stdin`), which avoids command-line length limits on Windows
+   * for repositories with thousands of refs.
+   */
+  async getLog(query: LogQuery, options: RepoCallOptions = {}): Promise<CommitInfo[]> {
+    if (query.tips.length === 0 || query.maxCount <= 0) {
+      return [];
+    }
+    const output = await this.text(
+      [
+        'log',
+        '-z',
+        `--format=${LOG_FORMAT}`,
+        query.order === 'topo' ? '--topo-order' : '--date-order',
+        `--max-count=${query.maxCount}`,
+        `--skip=${query.skip}`,
+        '--no-color',
+        '--stdin',
+      ],
+      { ...options, stdin: query.tips.join('\n') + '\n' },
+    );
+    return parseLog(output);
+  }
+
+  /** Number of commits reachable from the tips. */
+  async countCommits(tips: readonly string[], options: RepoCallOptions = {}): Promise<number> {
+    if (tips.length === 0) {
+      return 0;
+    }
+    const output = await this.text(['rev-list', '--count', '--stdin'], { ...options, stdin: tips.join('\n') + '\n' });
+    return Number.parseInt(output.trim(), 10) || 0;
   }
 
   /** Hash of the empty tree in this repository's object format (SHA-1 or SHA-256). */
