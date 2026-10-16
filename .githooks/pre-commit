@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits that contain credentials (API keys, tokens, private keys, ...).
+# Enabled by `npm install`. Do not bypass with --no-verify: remove the secret instead.
+exec node scripts/secret-scan.mjs --staged
