@@ -1,6 +1,8 @@
 // Messages between the extension host and the graph webview. Shared by both
 // sides: no Node or vscode imports.
 
+import { RowShape } from './graphGeometry';
+
 export interface RefBadge {
   name: string;
   kind: 'head' | 'remote' | 'tag';
@@ -21,6 +23,8 @@ export interface CommitRow {
   refs: RefBadge[];
   /** HEAD points at this commit. */
   head: boolean;
+  /** This row's part of the branch graph. */
+  graph: RowShape;
 }
 
 /** What the graph is showing, for the status line and empty states. */

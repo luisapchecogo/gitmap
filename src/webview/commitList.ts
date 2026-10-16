@@ -1,6 +1,7 @@
 import { relativeDate } from '../shared/format';
 import { CommitRow } from '../shared/protocol';
 import { h } from './dom';
+import { GRAPH_METRICS, renderGraphRow } from './graphSvg';
 
 /** Builds the multi-line native tooltip for a commit row. */
 function tooltip(row: CommitRow): string {
@@ -36,6 +37,8 @@ export class CommitList {
   private readonly observer: IntersectionObserver;
   private hasMore = false;
   private requested = false;
+  /** Widest graph so far, in lanes: every row reserves this much room. */
+  private graphLanes = 1;
 
   constructor(private readonly onLoadMore: () => void) {
     this.element = h('div', 'list');
@@ -52,12 +55,15 @@ export class CommitList {
   }
 
   reset(rows: readonly CommitRow[], hasMore: boolean): void {
+    this.graphLanes = 1;
+    this.updateGraphWidth(rows);
     this.rowsElement.replaceChildren(...rows.map((row) => this.renderRow(row)));
     this.element.scrollTop = 0;
     this.setHasMore(hasMore);
   }
 
   append(rows: readonly CommitRow[], hasMore: boolean): void {
+    this.updateGraphWidth(rows);
     this.rowsElement.append(...rows.map((row) => this.renderRow(row)));
     this.setHasMore(hasMore);
   }
@@ -68,6 +74,19 @@ export class CommitList {
     for (const element of this.rowsElement.querySelectorAll<HTMLElement>('.date[data-time]')) {
       element.textContent = relativeDate(Number(element.dataset.time), now);
     }
+  }
+
+  /**
+   * Keeps the text column aligned: the graph column is as wide as the
+   * widest row loaded (capped by CSS so narrow side bars clip lanes rather
+   * than squeezing the text away).
+   */
+  private updateGraphWidth(rows: readonly CommitRow[]): void {
+    for (const row of rows) {
+      this.graphLanes = Math.max(this.graphLanes, row.graph.width);
+    }
+    // CSSOM is allowed by the webview's CSP (inline style attributes are not).
+    this.element.style.setProperty('--graph-width', `${this.graphLanes * GRAPH_METRICS.laneWidth + 4}px`);
   }
 
   private setHasMore(hasMore: boolean): void {
@@ -93,6 +112,7 @@ export class CommitList {
     element.title = tooltip(row);
 
     const graph = h('div', 'graph');
+    graph.append(renderGraphRow(row.graph, { merge: row.parents.length > 1, head: row.head }));
     const text = h('div', 'text');
 
     const line1 = h('div', 'line1');

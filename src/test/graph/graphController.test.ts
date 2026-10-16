@@ -101,6 +101,42 @@ suite('GraphController', () => {
     controller.dispose();
   });
 
+  test('sends the same lanes whether history arrives in pages or at once', async () => {
+    const branchy = await TempRepo.create();
+    try {
+      await branchy.commitFiles('base', { 'a.txt': '0\n' });
+      for (const name of ['one', 'two']) {
+        await branchy.git('switch', '--quiet', '-c', name, 'main');
+        await branchy.commitFiles(`${name} work`, { [`${name}.txt`]: '1\n' });
+      }
+      await branchy.git('switch', '--quiet', 'main');
+      await branchy.commitFiles('main work', { 'a.txt': '1\n' });
+      branchy.tick();
+      await branchy.git('merge', '--quiet', '--no-ff', '-m', 'merge one', 'one');
+      const repository = new GitRepository(branchy.root, new GitRunner({ env: branchy.env }));
+
+      const whole = new GraphController({ pageSize: () => 100, commitOrder: () => 'date' });
+      await whole.setRepository(repository);
+      const paged = new GraphController({ pageSize: () => 2, commitOrder: () => 'date' });
+      await paged.setRepository(repository);
+      while (paged.loadedRows.length < whole.loadedRows.length) {
+        const before = paged.loadedRows.length;
+        await paged.loadMore(paged.currentGeneration);
+        assert.ok(paged.loadedRows.length > before, 'each page adds rows');
+      }
+      assert.deepStrictEqual(
+        paged.loadedRows.map((r) => r.graph),
+        whole.loadedRows.map((r) => r.graph),
+      );
+      const merge = whole.loadedRows.find((r) => r.subject === 'merge one');
+      assert.strictEqual(merge?.graph.edges.filter((e) => e.kind === 'out').length, 2);
+      whole.dispose();
+      paged.dispose();
+    } finally {
+      await branchy.dispose();
+    }
+  });
+
   test('reports searching, missing and empty repositories', async () => {
     const controller = new GraphController(settings);
     const sink = new RecordingSink();

@@ -70,9 +70,58 @@ body {
 
 .graph {
   flex: none;
-  width: 8px;
+  width: var(--graph-width, 16px);
+  max-width: 40%;
   height: var(--row-height);
   overflow: hidden;
+}
+
+.graph svg {
+  display: block;
+  overflow: visible;
+}
+
+/* Lane colors: the theme's SCM graph colors where defined (VS Code 1.93+),
+   with the same defaults otherwise. */
+.c0 {
+  --lane: var(--vscode-scmGraph-foreground1, #ffb000);
+}
+
+.c1 {
+  --lane: var(--vscode-scmGraph-foreground2, #dc267f);
+}
+
+.c2 {
+  --lane: var(--vscode-scmGraph-foreground3, #994f00);
+}
+
+.c3 {
+  --lane: var(--vscode-scmGraph-foreground4, #40b0a6);
+}
+
+.c4 {
+  --lane: var(--vscode-scmGraph-foreground5, #b66dff);
+}
+
+.lane {
+  fill: none;
+  stroke: var(--lane);
+  stroke-width: 2;
+}
+
+.node {
+  fill: var(--lane);
+  stroke: var(--lane);
+  stroke-width: 2;
+}
+
+.node.merge,
+.node.head {
+  fill: var(--vscode-sideBar-background);
+}
+
+.node.head {
+  stroke-width: 2.5;
 }
 
 .text {
