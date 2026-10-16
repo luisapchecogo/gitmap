@@ -1,4 +1,7 @@
 import * as esbuild from 'esbuild';
+import { copyFile, mkdir } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -26,7 +29,21 @@ const problemMatcherPlugin = {
   },
 };
 
-const ctx = await esbuild.context({
+/**
+ * Copies the codicon font and stylesheet next to the webview bundle: the
+ * webview may only load files from the extension's own folder, and
+ * node_modules is not shipped in the .vsix.
+ */
+async function copyCodicons() {
+  const require = createRequire(import.meta.url);
+  const source = join(dirname(require.resolve('@vscode/codicons/package.json')), 'dist');
+  await mkdir('dist/webview', { recursive: true });
+  await Promise.all(
+    ['codicon.css', 'codicon.ttf'].map((file) => copyFile(join(source, file), join('dist/webview', file))),
+  );
+}
+
+const extensionContext = await esbuild.context({
   entryPoints: ['src/extension.ts'],
   bundle: true,
   format: 'cjs',
@@ -42,9 +59,27 @@ const ctx = await esbuild.context({
   plugins: [problemMatcherPlugin],
 });
 
+// The graph view's browser code and styles (see src/webview/).
+const webviewContext = await esbuild.context({
+  entryPoints: ['src/webview/main.ts', 'src/webview/main.css'],
+  bundle: true,
+  format: 'iife',
+  // VS Code 1.90 ships Electron 29 (Chromium 122).
+  target: 'chrome120',
+  platform: 'browser',
+  minify: production,
+  sourcemap: !production,
+  sourcesContent: false,
+  outdir: 'dist/webview',
+  logLevel: 'silent',
+  plugins: [problemMatcherPlugin],
+});
+
+await copyCodicons();
+
 if (watch) {
-  await ctx.watch();
+  await Promise.all([extensionContext.watch(), webviewContext.watch()]);
 } else {
-  await ctx.rebuild();
-  await ctx.dispose();
+  await Promise.all([extensionContext.rebuild(), webviewContext.rebuild()]);
+  await Promise.all([extensionContext.dispose(), webviewContext.dispose()]);
 }

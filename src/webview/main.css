@@ -1,0 +1,502 @@
+/* Graph webview styles. Colors come from VS Code's theme variables. */
+
+:root {
+  --row-height: 40px;
+  --line1-height: 22px;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  color: var(--vscode-foreground);
+  background: var(--vscode-sideBar-background);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.toolbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, transparent);
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.picker {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid var(--vscode-dropdown-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-dropdown-foreground);
+  background: var(--vscode-dropdown-background);
+  cursor: pointer;
+}
+
+.picker .label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker .chevron {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.picker:focus-visible,
+.icon-button:focus-visible,
+.toggle input:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+.toggle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.toggle input {
+  margin: 0;
+  accent-color: var(--vscode-button-background);
+}
+
+.toggle.disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.icon-button {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  color: var(--vscode-icon-foreground);
+  background: transparent;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 6px;
+  border-top: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border, transparent));
+}
+
+.footer .sides {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.footer .sides .picker {
+  flex: 1 1 0;
+}
+
+.footer .side {
+  flex: none;
+  font-size: 10px;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.footer .icon-button {
+  margin-left: 0;
+}
+
+.footer .actions {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.primary {
+  height: 24px;
+  padding: 0 12px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  cursor: pointer;
+}
+
+.primary:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.primary:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.search {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+}
+
+.search-field {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  height: 24px;
+  padding: 0 4px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+}
+
+.search-field:focus-within {
+  border-color: var(--vscode-focusBorder);
+}
+
+.search-icon {
+  flex: none;
+  opacity: 0.7;
+}
+
+.search-field input {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+  border: none;
+  outline: none;
+  color: inherit;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.search-field input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.search-field input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.counter {
+  flex: none;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+.counter.warning {
+  color: var(--vscode-errorForeground);
+}
+
+.search .nav {
+  margin-left: 0;
+}
+
+.row.match .subject {
+  text-decoration: underline;
+  text-decoration-color: var(--vscode-editor-findMatchHighlightBorder, var(--vscode-focusBorder));
+  text-underline-offset: 3px;
+}
+
+.status {
+  flex: none;
+  padding: 2px 8px 3px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status:empty {
+  display: none;
+}
+
+.placeholder {
+  padding: 12px;
+  color: var(--vscode-descriptionForeground);
+  overflow-wrap: anywhere;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  height: var(--row-height);
+  cursor: default;
+  user-select: none;
+}
+
+.list:focus {
+  outline: none;
+}
+
+.row:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.row.selected {
+  background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+.list:focus .row.selected {
+  color: var(--vscode-list-activeSelectionForeground);
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+.list:focus .row.selected .line2 {
+  color: inherit;
+}
+
+.row.is-base {
+  box-shadow: inset 2px 0 0 var(--vscode-charts-orange, #d18616);
+}
+
+.row.is-target {
+  box-shadow: inset 2px 0 0 var(--vscode-charts-green, #89d185);
+}
+
+.markers {
+  display: contents;
+}
+
+.marker {
+  flex: none;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  letter-spacing: 0.04em;
+  color: var(--vscode-sideBar-background);
+}
+
+.marker.base {
+  background: var(--vscode-charts-orange, #d18616);
+}
+
+.marker.target {
+  background: var(--vscode-charts-green, #89d185);
+}
+
+.graph {
+  flex: none;
+  width: var(--graph-width, 16px);
+  max-width: 40%;
+  height: var(--row-height);
+  overflow: hidden;
+}
+
+.graph svg {
+  display: block;
+  overflow: visible;
+}
+
+/* Lane colors: the theme's SCM graph colors where defined (VS Code 1.93+),
+   with the same defaults otherwise. */
+.c0 {
+  --lane: var(--vscode-scmGraph-foreground1, #ffb000);
+}
+
+.c1 {
+  --lane: var(--vscode-scmGraph-foreground2, #dc267f);
+}
+
+.c2 {
+  --lane: var(--vscode-scmGraph-foreground3, #994f00);
+}
+
+.c3 {
+  --lane: var(--vscode-scmGraph-foreground4, #40b0a6);
+}
+
+.c4 {
+  --lane: var(--vscode-scmGraph-foreground5, #b66dff);
+}
+
+.lane {
+  fill: none;
+  stroke: var(--lane);
+  stroke-width: 2;
+}
+
+.node {
+  fill: var(--lane);
+  stroke: var(--lane);
+  stroke-width: 2;
+}
+
+.node.merge,
+.node.head {
+  fill: var(--vscode-sideBar-background);
+}
+
+.node.head {
+  stroke-width: 2.5;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px 0 2px;
+}
+
+.line1 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--line1-height);
+}
+
+.subject {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row.head .subject {
+  font-weight: 600;
+}
+
+.refs {
+  display: flex;
+  flex: 0 1 auto;
+  gap: 3px;
+  min-width: 0;
+  max-width: 55%;
+  overflow: hidden;
+}
+
+.badge {
+  flex: 0 1 auto;
+  min-width: 24px;
+  max-width: 140px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge.head {
+  color: var(--vscode-charts-blue, #3794ff);
+}
+
+.badge.remote {
+  color: var(--vscode-charts-purple, #b180d7);
+}
+
+.badge.tag {
+  color: var(--vscode-charts-yellow, #cca700);
+}
+
+.badge.current {
+  font-weight: 700;
+}
+
+.line2 {
+  height: calc(var(--row-height) - var(--line1-height));
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hash {
+  font-family: var(--vscode-editor-font-family);
+}
+
+.sentinel {
+  height: 1px;
+}
+
+.codicon-modifier-spin {
+  animation: codicon-spin 1.5s steps(30) infinite;
+}
+
+@keyframes codicon-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* High-contrast themes have no hover/selection fills: use outlines. */
+body.vscode-high-contrast .row:hover,
+body.vscode-high-contrast-light .row:hover {
+  outline: 1px dashed var(--vscode-contrastActiveBorder);
+  outline-offset: -1px;
+}
+
+body.vscode-high-contrast .row.selected,
+body.vscode-high-contrast-light .row.selected {
+  outline: 1px solid var(--vscode-contrastActiveBorder);
+  outline-offset: -1px;
+}
