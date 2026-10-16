@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ChangeDecorationProvider } from './compare/changeDecorations';
-import { ChangesTreeProvider } from './compare/changesTreeProvider';
+import { ChangesTreeProvider, pageSize } from './compare/changesTreeProvider';
 import { registerCompareCommands } from './compare/compareCommands';
 import { CompareService } from './compare/compareService';
 import { CompareState } from './compare/compareState';
@@ -37,7 +37,7 @@ export function activate(context: vscode.ExtensionContext): GitMapTestApi {
 
   const store = new WorkspaceStore(context.workspaceState);
   const state = new CompareState(session, store);
-  const service = new CompareService();
+  const service = new CompareService(pageSize);
   const changesTree = new ChangesTreeProvider(service, session);
   context.subscriptions.push(
     state,

@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { FileChange, parseRawDiff } from '../core/diffParser';
+import { FileChange, LineStats, parseNumstat, parseRawDiff } from '../core/diffParser';
 import { GitExecOptions, GitResult, GitRunner } from '../core/gitRunner';
 import { GitRef, parseRefs, REF_FORMAT, REF_PATTERNS } from '../core/refsParser';
 import { Revision, revisionLabel } from '../core/revision';
@@ -156,6 +156,17 @@ export class GitRepository {
       changes.push(...(await this.untrackedFiles(options)));
     }
     return { left, right, mergeBase, changes };
+  }
+
+  /**
+   * Added/removed line counts per file between two tree-ishes (or a
+   * tree-ish and the working tree), with the same rename detection as
+   * {@link getChanges}.
+   */
+  async getLineStats(left: string, right: string | undefined, options: RepoCallOptions = {}): Promise<LineStats[]> {
+    const revisions = right ? [left, right] : [left];
+    const output = await this.text(['diff', '--numstat', '-z', ...DIFF_OPTIONS, '--end-of-options', ...revisions, '--'], options);
+    return parseNumstat(output);
   }
 
   /** Untracked, non-ignored files in the working tree, as `?` changes. */

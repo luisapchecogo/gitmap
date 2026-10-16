@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { buildChangeTree, ChangeTree, ChangeTreeNode } from '../core/changeTree';
+import { FileChange } from '../core/diffParser';
 import { statusTooltip } from './changeDecorations';
 import { CompareService } from './compareService';
 import { Session } from '../state/session';
@@ -7,11 +8,22 @@ import { toChangeFolderUri, toChangeUri } from './gitUri';
 
 export const CHANGES_VIEW_ID = 'gitmap.compare';
 
+/** `+12 −3`, `binary`, or nothing when counts are not loaded. */
+export function lineStatsText(change: FileChange): string | undefined {
+  if (change.additions === undefined) {
+    return undefined;
+  }
+  if (change.additions === null || change.deletions === null || change.deletions === undefined) {
+    return 'binary';
+  }
+  return `+${change.additions} −${change.deletions}`;
+}
+
 /** Folders start expanded unless the comparison is this large. */
 const EXPAND_LIMIT = 300;
 
 /** Files shown per page (`gitmap.compare.maxFiles`). */
-function pageSize(): number {
+export function pageSize(): number {
   const value = vscode.workspace.getConfiguration('gitmap').get<number>('compare.maxFiles', 1000);
   return Math.max(1, Math.floor(value));
 }
@@ -83,7 +95,7 @@ export class ChangesTreeProvider implements vscode.TreeDataProvider<ChangeTreeNo
         item.id = node.id;
         item.resourceUri = toChangeUri(node.path, change.status);
         item.iconPath = vscode.ThemeIcon.File;
-        item.description = change.oldPath ? `← ${change.oldPath}` : undefined;
+        item.description = [change.oldPath && `← ${change.oldPath}`, lineStatsText(change)].filter(Boolean).join(' · ') || undefined;
         item.tooltip = change.oldPath
           ? `${change.oldPath} → ${change.path}\n${statusTooltip(change.status)}`
           : `${change.path}\n${statusTooltip(change.status)}`;
