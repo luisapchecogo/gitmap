@@ -64,7 +64,7 @@ Node 24 is required (`.nvmrc`). Agent shells may start on an older default Node;
 - `engines.vscode` is `^1.90.0` to stay compatible with VS Code forks that lag upstream. `@types/vscode` is pinned **exactly** to that same minimum; bump both together, never `@types/vscode` alone (vsce rejects types newer than the engine). Don't use APIs newer than the engine.
 - TypeScript is pinned to `~6.0` because typescript-eslint supports `<6.1`; TypeScript 7 (native) is not supported by it yet.
 - `@types/node` stays on 20.x — the Node version VS Code 1.90's extension host runs.
-- The extension is bundled with esbuild (`esbuild.mjs`); tests are compiled separately with `tsc` into `out/`. Only `dist/`, `media/`, `package.json`, `README.md`, `CHANGELOG.md` and `LICENSE` ship in the `.vsix` (see `.vscodeignore`) — keep new tooling files out of it.
+- The extension is bundled with esbuild (`esbuild.mjs`) into `dist/extension.js`, and the graph webview (`src/webview/`, browser code with its own `tsconfig.json`) into `dist/webview/` together with the codicon font copied from `@vscode/codicons`; tests are compiled separately with `tsc` into `out/`. Only `dist/`, `media/`, `package.json`, `README.md`, `CHANGELOG.md`, `LICENSE` and `THIRD_PARTY_NOTICES.md` ship in the `.vsix` (see `.vscodeignore`) — keep new tooling files out of it, and record any bundled third-party asset in `THIRD_PARTY_NOTICES.md`.
 - npm 11 install-script approvals live in `package.json` → `allowScripts` (esbuild, @vscode/vsce-sign).
 - `npm audit` reports issues in mocha's deps via `@vscode/test-cli`; they are dev-only test tooling and not shipped.
 - Lint enforces `no-floating-promises` / `no-misused-promises` (type-aware): await, `.catch`, or explicitly `void` every promise.
