@@ -83,6 +83,30 @@
         "icon": "$(git-compare)"
       },
       {
+        "command": "gitmap.swapCompare",
+        "title": "Swap Base and Target",
+        "category": "GitMap",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "gitmap.toggleCompareMode",
+        "title": "Toggle PR-Style Comparison (From Merge Base)",
+        "category": "GitMap",
+        "icon": "$(git-merge)"
+      },
+      {
+        "command": "gitmap.clearCompare",
+        "title": "Clear Comparison",
+        "category": "GitMap",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "gitmap.openAllChanges",
+        "title": "Open All Changes",
+        "category": "GitMap",
+        "icon": "$(diff-multiple)"
+      },
+      {
         "command": "gitmap.openChange",
         "title": "Open Changes",
         "category": "GitMap",
@@ -106,6 +130,26 @@
           "command": "gitmap.compareRevisions",
           "when": "view == gitmap.compare",
           "group": "navigation@1"
+        },
+        {
+          "command": "gitmap.swapCompare",
+          "when": "view == gitmap.compare && gitmap.hasComparison",
+          "group": "navigation@2"
+        },
+        {
+          "command": "gitmap.openAllChanges",
+          "when": "view == gitmap.compare && gitmap.hasChanges",
+          "group": "navigation@3"
+        },
+        {
+          "command": "gitmap.toggleCompareMode",
+          "when": "view == gitmap.compare",
+          "group": "1_mode@1"
+        },
+        {
+          "command": "gitmap.clearCompare",
+          "when": "view == gitmap.compare && gitmap.hasComparison",
+          "group": "2_clear@1"
         }
       ],
       "view/item/context": [

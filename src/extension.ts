@@ -9,7 +9,17 @@ import { GIT_SCHEME } from './compare/gitUri';
 import { Session } from './state/session';
 import { WorkspaceStore } from './state/workspaceStore';
 
-export function activate(context: vscode.ExtensionContext): void {
+/**
+ * Internals returned from activate() for the integration tests. Not a
+ * public API: it may change in any release.
+ */
+export interface GitMapTestApi {
+  session: Session;
+  compareState: CompareState;
+  compareService: CompareService;
+}
+
+export function activate(context: vscode.ExtensionContext): GitMapTestApi {
   const session = new Session(context);
   context.subscriptions.push(session);
 
@@ -35,6 +45,8 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerFileDecorationProvider(new ChangeDecorationProvider()),
     ...registerCompareCommands({ session, state, service }),
   );
+
+  return { session, compareState: state, compareService: service };
 }
 
 export function deactivate(): void {}

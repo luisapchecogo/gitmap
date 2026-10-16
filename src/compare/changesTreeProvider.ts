@@ -97,6 +97,7 @@ export class ChangesTreeProvider implements vscode.TreeDataProvider<ChangeTreeNo
     }
 
     void vscode.commands.executeCommand('setContext', 'gitmap.hasComparison', !!result || !!this.service.error);
+    void vscode.commands.executeCommand('setContext', 'gitmap.hasChanges', !!result && result.changes.length > 0);
     this.emitter.fire();
   }
 

@@ -6,7 +6,7 @@ import { pickRepository, pickRevision } from '../state/pickers';
 import { Session } from '../state/session';
 import { CompareSelection, CompareState } from './compareState';
 import { CompareService } from './compareService';
-import { openChange, openTargetFile } from './openDiff';
+import { changeUris, openChange, openTargetFile } from './openDiff';
 
 export interface CompareDeps {
   session: Session;
@@ -27,8 +27,38 @@ export async function runComparison(deps: CompareDeps, repository: GitRepository
   }
 }
 
+/**
+ * The comparison the Changes view's title actions act on: the one shown,
+ * or else the selection for the active repository.
+ */
+function currentComparison(deps: CompareDeps): { repository: GitRepository; selection: CompareSelection } | undefined {
+  const shown = deps.service.current;
+  if (shown) {
+    return { repository: shown.repository, selection: shown.selection };
+  }
+  const repository = deps.session.activeRepository;
+  return repository ? { repository, selection: deps.state.selectionFor(repository) } : undefined;
+}
+
 export function registerCompareCommands(deps: CompareDeps): vscode.Disposable[] {
   const { session, state, service } = deps;
+
+  /** Applies a change to the current comparison and re-runs it if one is shown. */
+  const adjust = async (patch: (selection: CompareSelection) => CompareSelection | undefined): Promise<void> => {
+    const comparison = currentComparison(deps);
+    if (!comparison) {
+      return;
+    }
+    const next = patch(comparison.selection);
+    if (!next) {
+      return;
+    }
+    if (service.current || service.error) {
+      await runComparison(deps, comparison.repository, next);
+    } else {
+      await state.update(comparison.repository, next);
+    }
+  };
 
   const fileNode = (node: unknown): (ChangeTreeNode & { kind: 'file' }) | undefined => {
     const candidate = node as ChangeTreeNode | undefined;
@@ -59,6 +89,36 @@ export function registerCompareCommands(deps: CompareDeps): vscode.Disposable[] 
       }
       session.setActiveRepository(repository);
       await runComparison(deps, repository, { ...current, base, target });
+    }),
+
+    vscode.commands.registerCommand('gitmap.swapCompare', () =>
+      adjust((selection) => {
+        if (selection.target.kind === 'workingTree') {
+          void vscode.window.showInformationMessage(
+            'GitMap: the Working Tree can only be the target. Pick another target to swap the sides.',
+          );
+          return undefined;
+        }
+        return { ...selection, base: selection.target, target: selection.base };
+      }),
+    ),
+
+    vscode.commands.registerCommand('gitmap.toggleCompareMode', () =>
+      adjust((selection) => ({ ...selection, mode: selection.mode === 'mergeBase' ? 'direct' : 'mergeBase' })),
+    ),
+
+    vscode.commands.registerCommand('gitmap.clearCompare', () => service.clear()),
+
+    vscode.commands.registerCommand('gitmap.openAllChanges', async () => {
+      const result = service.current;
+      if (!result || result.changes.length === 0) {
+        return;
+      }
+      const resources = result.changes.map((change) => {
+        const uris = changeUris(result, change);
+        return [uris.resource, uris.left, uris.right];
+      });
+      await vscode.commands.executeCommand('vscode.changes', `${result.leftLabel} ↔ ${result.rightLabel}`, resources);
     }),
 
     vscode.commands.registerCommand('gitmap.openChange', async (node: unknown) => {
