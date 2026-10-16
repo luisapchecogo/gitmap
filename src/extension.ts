@@ -17,6 +17,7 @@ export interface GitMapTestApi {
   session: Session;
   compareState: CompareState;
   compareService: CompareService;
+  changesTree: ChangesTreeProvider;
 }
 
 export function activate(context: vscode.ExtensionContext): GitMapTestApi {
@@ -43,10 +44,10 @@ export function activate(context: vscode.ExtensionContext): GitMapTestApi {
     service,
     changesTree,
     vscode.window.registerFileDecorationProvider(new ChangeDecorationProvider()),
-    ...registerCompareCommands({ session, state, service }),
+    ...registerCompareCommands({ session, state, service, changesTree }),
   );
 
-  return { session, compareState: state, compareService: service };
+  return { session, compareState: state, compareService: service, changesTree };
 }
 
 export function deactivate(): void {}

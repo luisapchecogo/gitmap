@@ -4,6 +4,7 @@ import { revisionLabel } from '../core/revision';
 import { GitRepository } from '../git/repository';
 import { pickRepository, pickRevision } from '../state/pickers';
 import { Session } from '../state/session';
+import { ChangesTreeProvider } from './changesTreeProvider';
 import { CompareSelection, CompareState } from './compareState';
 import { CompareService } from './compareService';
 import { changeUris, openChange, openTargetFile } from './openDiff';
@@ -12,6 +13,7 @@ export interface CompareDeps {
   session: Session;
   state: CompareState;
   service: CompareService;
+  changesTree: ChangesTreeProvider;
 }
 
 /**
@@ -108,6 +110,8 @@ export function registerCompareCommands(deps: CompareDeps): vscode.Disposable[] 
     ),
 
     vscode.commands.registerCommand('gitmap.clearCompare', () => service.clear()),
+
+    vscode.commands.registerCommand('gitmap.showMoreFiles', () => deps.changesTree.showMore()),
 
     vscode.commands.registerCommand('gitmap.openAllChanges', async () => {
       const result = service.current;

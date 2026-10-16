@@ -10,6 +10,12 @@ export const CHANGES_VIEW_ID = 'gitmap.compare';
 /** Folders start expanded unless the comparison is this large. */
 const EXPAND_LIMIT = 300;
 
+/** Files shown per page (`gitmap.compare.maxFiles`). */
+function pageSize(): number {
+  const value = vscode.workspace.getConfiguration('gitmap').get<number>('compare.maxFiles', 1000);
+  return Math.max(1, Math.floor(value));
+}
+
 /**
  * The Changes view: the current comparison's files as a folder tree.
  * Clicking a file opens its diff.
@@ -21,13 +27,31 @@ export class ChangesTreeProvider implements vscode.TreeDataProvider<ChangeTreeNo
   readonly view: vscode.TreeView<ChangeTreeNode>;
   private tree: ChangeTree = { roots: [], shown: 0, total: 0 };
   private readonly disposables: vscode.Disposable[] = [this.emitter];
+  /** Comparison the tree was built for; a new one resets the page limit. */
+  private shownResult: unknown;
+  private limit = pageSize();
 
   constructor(
     private readonly service: CompareService,
     private readonly session: Session,
   ) {
     this.view = vscode.window.createTreeView(CHANGES_VIEW_ID, { treeDataProvider: this, showCollapseAll: true });
-    this.disposables.push(this.view, service.onDidChange(() => this.refresh()));
+    this.disposables.push(
+      this.view,
+      service.onDidChange(() => this.refresh()),
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration('gitmap.compare.maxFiles')) {
+          this.limit = pageSize();
+          this.refresh();
+        }
+      }),
+    );
+    this.refresh();
+  }
+
+  /** Shows the next page of a truncated comparison. */
+  showMore(): void {
+    this.limit += pageSize();
     this.refresh();
   }
 
@@ -68,9 +92,13 @@ export class ChangesTreeProvider implements vscode.TreeDataProvider<ChangeTreeNo
         return item;
       }
       case 'more': {
-        const item = new vscode.TreeItem(`${node.remaining.toLocaleString()} more files…`);
+        const next = Math.min(node.remaining, pageSize());
+        const item = new vscode.TreeItem(`Show ${next.toLocaleString()} more…`);
         item.id = node.id;
+        item.description = `${node.remaining.toLocaleString()} not shown`;
+        item.iconPath = new vscode.ThemeIcon('ellipsis');
         item.contextValue = 'more';
+        item.command = { command: 'gitmap.showMoreFiles', title: 'Show More' };
         return item;
       }
     }
@@ -78,7 +106,11 @@ export class ChangesTreeProvider implements vscode.TreeDataProvider<ChangeTreeNo
 
   private refresh(): void {
     const result = this.service.current;
-    this.tree = result ? buildChangeTree(result.changes) : { roots: [], shown: 0, total: 0 };
+    if (result !== this.shownResult) {
+      this.shownResult = result;
+      this.limit = pageSize();
+    }
+    this.tree = result ? buildChangeTree(result.changes, this.limit) : { roots: [], shown: 0, total: 0 };
 
     if (result) {
       const count = result.changes.length;
@@ -92,6 +124,8 @@ export class ChangesTreeProvider implements vscode.TreeDataProvider<ChangeTreeNo
       this.view.message = this.service.error;
     } else if (result && result.changes.length === 0) {
       this.view.message = `No differences between ${result.leftLabel} and ${result.rightLabel}.`;
+    } else if (this.tree.shown < this.tree.total) {
+      this.view.message = `Showing the first ${this.tree.shown.toLocaleString()} of ${this.tree.total.toLocaleString()} changed files.`;
     } else {
       this.view.message = undefined;
     }

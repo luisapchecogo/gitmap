@@ -122,6 +122,11 @@
         "command": "gitmap.copyPath",
         "title": "Copy Relative Path",
         "category": "GitMap"
+      },
+      {
+        "command": "gitmap.showMoreFiles",
+        "title": "Show More Changed Files",
+        "category": "GitMap"
       }
     ],
     "menus": {
@@ -186,6 +191,10 @@
         {
           "command": "gitmap.copyPath",
           "when": "false"
+        },
+        {
+          "command": "gitmap.showMoreFiles",
+          "when": "false"
         }
       ]
     },
@@ -240,7 +249,18 @@
           "highContrastLight": "gitDecoration.untrackedResourceForeground"
         }
       }
-    ]
+    ],
+    "configuration": {
+      "title": "GitMap",
+      "properties": {
+        "gitmap.compare.maxFiles": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 1,
+          "markdownDescription": "How many changed files the Changes view shows at a time. Larger comparisons show a **Show more…** item that loads the next batch."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
