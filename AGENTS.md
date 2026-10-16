@@ -6,7 +6,32 @@ GitMap is an open-source (MIT) VS Code extension written in TypeScript. It must 
 
 ## Product goal
 
-An activity-bar view (like Git Graph, but focused on comparison) where the user picks two commits — or the working tree vs. any past commit — and sees every changed file grouped in a folder tree. Clicking a file opens VS Code's native diff editor so changes can be reviewed line by line, file by file. Currently only scaffolding exists: `src/extension.ts` registers an empty `gitmap.compare` tree that shows welcome text.
+An activity-bar view (like Git Graph, but focused on comparison) where the user picks two commits — or the working tree vs. any past commit — and sees every changed file grouped in a folder tree. Clicking a file opens VS Code's native diff editor so changes can be reviewed line by line, file by file. Version 0.1 implements this: a Graph webview (commit list with lanes, filters, search, and a Base ⇄ Target compare bar) above a Changes tree view. The README lists the features and the out-of-scope items.
+
+## Architecture
+
+The extension host owns all state; the graph webview only renders it.
+
+| Folder | Role |
+| --- | --- |
+| `src/core/` | Pure logic with **no `vscode` import**, so it is unit-testable: `GitRunner` (the only way to run git), parsers for `log -z`, `for-each-ref`, `diff --raw -z` and `--numstat -z`, `LaneLayout` (graph lanes), `buildChangeTree`, `Revision`. |
+| `src/git/` | `GitRepository` (all git operations, also vscode-free), repository discovery, vendored `vscode.git` typings (`import type` only). |
+| `src/state/` | `Session` (repositories, active repo, runner), `WorkspaceStore` (per-repo settings in workspace state), QuickPicks. |
+| `src/compare/` | Changes tree, `CompareState`/`CompareService`, the read-only `gitmap:` file system, decorations, diff commands. |
+| `src/graph/` | `GraphController` (rows, paging, generations, search, reveal; no webview dependency), the webview view provider, HTML/CSP, the compare footer, auto refresh, row commands. |
+| `src/webview/` | Browser code for the graph (own `tsconfig.json`, DOM lib), bundled to `dist/webview/`. |
+| `src/shared/` | Code for both sides (message protocol, SVG geometry, formatting): no Node or `vscode` imports. |
+
+Invariants to keep:
+
+- **git only through `GitRunner`**: `spawn` with no shell, hardened env (`GIT_OPTIONAL_LOCKS=0`, `GIT_TERMINAL_PROMPT=0`, …) and config overrides. Put `--end-of-options` before user-supplied revisions, or reject values that start with `-` where git lacks it (`rev-parse`). Pass many revisions through `--stdin`.
+- **Machine-readable git output only**: NUL-separated formats (`-z`, `%x00`); never parse decorated or human output (`%D`, porcelain status).
+- **`vscode.git` is a soft dependency**: never add it to `extensionDependencies`; everything must work with `git.enabled: false`.
+- **Webview security**: commit messages and ref names are attacker-controlled. Build DOM with `textContent`/`createElement(NS)`, never `innerHTML`; keep the nonce CSP without `unsafe-inline` (set styles through CSSOM only); validate every message and command argument coming from the webview.
+- **Webviews are disposable**: side bar webviews are destroyed when hidden, so the host replays its state when the webview posts `ready`. Reloads bump a generation number, and stale results are dropped.
+- **Graph loads pin their tips** (hashes resolved once per load); never use `git log --all`.
+- **`gitmap:` URIs are self-contained** (repo path + blob id), because diff editors are restored after a reload before discovery finishes. The file system provider is registered synchronously in `activate()`.
+- Tests: pure modules get unit tests; git behavior is tested against throwaway repositories (`src/test/helpers/tempRepo.ts`, isolated config, fixed dates); extension behavior goes through the internals returned by `activate()` (`GitMapTestApi`, which is not a public API).
 
 ## Secrets — never commit credentials
 
