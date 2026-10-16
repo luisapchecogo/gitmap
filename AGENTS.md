@@ -18,6 +18,37 @@ This repository is public. Anything committed is published permanently, even if 
 - If a secret was ever committed or pushed, stop and tell the user right away: it must be revoked and rotated; rewriting history alone is not enough.
 - GitHub secret scanning with push protection is enabled on the remote as a second line of defense.
 
+## Commits — small, incremental, well described
+
+The git history is the project's log of what was done, how, and why. Keep it traceable.
+
+- Commit after every logical, self-contained step (one concern per commit: a new module, a command, a bug fix, its tests, a docs change). Don't batch a whole feature into one commit, and don't end a task with uncommitted work.
+- Every commit must build: run `npm run compile` (and `npm test` when behavior or tests change) before committing.
+- Stage files explicitly and review `git diff --cached` before committing. Never use `--no-verify`.
+- Subject: [Conventional Commits](https://www.conventionalcommits.org/) style, `<type>(<scope>): <summary>` — imperative mood, ≤ 72 characters. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`.
+- Body (required for anything beyond a trivial change), wrapped at 72 columns:
+  - **What** changed, and **why** it was needed.
+  - **How** it works — the approach and key decisions, including alternatives rejected.
+  - **Verified** — the commands or manual checks that confirm it works.
+  - **Refs** — related issues, PRs, docs, or earlier commits, when relevant.
+- End with a `Co-Authored-By:` trailer naming the AI agent that wrote the change, so the history shows which agent did what.
+- Never amend, rebase, or force-push commits that are already on `origin`. Push to `origin` only when the user asks — the repository is public.
+
+Example:
+
+```
+feat(compare): list changed files between two commits
+
+What: add a git wrapper that returns the files changed between two
+refs, with their status (added/modified/deleted/renamed).
+Why: the Compare tree needs per-file status before diffs can open.
+How: run `git diff --name-status -z` via execFile (no shell) and parse
+the NUL-separated output, so paths with spaces or newlines are safe.
+Verified: npm run compile; npm test (new parser tests).
+
+Co-Authored-By: <agent name> <agent email>
+```
+
 ## Commands
 
 Node 24 is required (`.nvmrc`). Agent shells may start on an older default Node; if `node -v` is below 24, run `source ~/.nvm/nvm.sh && nvm use` first.
