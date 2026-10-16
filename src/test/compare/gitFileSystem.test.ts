@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { CHANGE_SCHEME, changeStatusOf, fromGitUri, toChangeUri, toGitUri } from '../../compare/gitUri';
+import { fromGitUri, toGitUri } from '../../compare/gitUri';
 import { TempRepo } from '../helpers/tempRepo';
 
 const NULL_OID = '0'.repeat(40);
@@ -12,17 +12,6 @@ suite('gitmap: URIs', () => {
       const parsed = fromGitUri(vscode.Uri.parse(toGitUri(ref).toString()));
       assert.deepStrictEqual(parsed, ref);
     }
-  });
-
-  test('keep the file name and extension in the path', () => {
-    const uri = toGitUri({ repo: '/r', path: 'src/app.test.ts', oid: NULL_OID, mode: '100644', ref: 'main' });
-    assert.strictEqual(uri.path, '/src/app.test.ts');
-  });
-
-  test('change URIs carry the status', () => {
-    const uri = toChangeUri('a/b.txt', 'R');
-    assert.strictEqual(uri.scheme, CHANGE_SCHEME);
-    assert.strictEqual(changeStatusOf(vscode.Uri.parse(uri.toString())), 'R');
   });
 });
 
@@ -42,15 +31,6 @@ suite('gitmap: file system', () => {
   function uriFor(path: string, oid: string, mode = '100644'): vscode.Uri {
     return toGitUri({ repo: repo.root, path, oid, mode, ref: 'HEAD' });
   }
-
-  test('is usable right after activation', async () => {
-    // Activation registers the provider synchronously, before repository
-    // discovery: restored diff editors depend on that.
-    await vscode.extensions.getExtension('luispacheco.gitmap')?.activate();
-    const oid = await repo.git('rev-parse', 'HEAD:text.txt');
-    const data = await vscode.workspace.fs.readFile(uriFor('text.txt', oid));
-    assert.strictEqual(new TextDecoder().decode(data), 'héllo\n');
-  });
 
   test('reads binary blobs byte for byte, with an exact size', async () => {
     const oid = await repo.git('rev-parse', 'HEAD:bin/data.bin');

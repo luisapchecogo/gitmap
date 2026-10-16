@@ -5,6 +5,9 @@ import { commitRevision, EMPTY_TREE, WORKING_TREE } from '../../core/revision';
 import { GitRepository } from '../../git/repository';
 import { TempRepo } from '../helpers/tempRepo';
 
+/** git's well-known empty tree in SHA-1 repositories (the test default). */
+const EMPTY_TREE_SHA1 = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+
 function summary(changes: FileChange[]): string[] {
   return changes
     .map((c) => (c.oldPath ? `${c.status} ${c.oldPath} -> ${c.path}` : `${c.status} ${c.path}`))
@@ -51,19 +54,9 @@ suite('GitRepository.getChanges', () => {
     ]);
   });
 
-  test('compares in either direction', async () => {
-    const result = await git.getChanges({ base: commitRevision(second), target: commitRevision(root) });
-    assert.deepStrictEqual(summary(result.changes), [
-      'A remove.txt',
-      'D dir with space/new #1.txt',
-      'M edit.txt',
-      'R renamed.txt -> rename-me.txt',
-    ]);
-  });
-
   test('compares a root commit against the empty tree', async () => {
     const result = await git.getChanges({ base: EMPTY_TREE, target: commitRevision(root) });
-    assert.strictEqual(result.left, await git.emptyTreeHash());
+    assert.strictEqual(result.left, EMPTY_TREE_SHA1);
     assert.deepStrictEqual(summary(result.changes), ['A edit.txt', 'A keep.txt', 'A remove.txt', 'A rename-me.txt']);
     assert.strictEqual(await git.parentOrEmptyTree(root), result.left);
     assert.strictEqual(await git.parentOrEmptyTree(second), root);

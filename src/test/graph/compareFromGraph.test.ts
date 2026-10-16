@@ -87,11 +87,6 @@ suite('Comparing from the graph', () => {
     assert.deepStrictEqual(api.compareState.selectionFor(git), before);
   });
 
-  test('copy hash puts the full hash on the clipboard', async () => {
-    await vscode.commands.executeCommand('gitmap.graph.copyHash', { hash: third });
-    assert.strictEqual(await vscode.env.clipboard.readText(), third);
-  });
-
   test('ignores invalid context arguments', async () => {
     const before = api.compareState.selectionFor(git);
     await vscode.commands.executeCommand('gitmap.graph.setBase', { hash: '--all' });

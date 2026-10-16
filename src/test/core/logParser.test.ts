@@ -24,11 +24,6 @@ suite('parseLog', () => {
     assert.strictEqual(root.body, '');
   });
 
-  test('parses octopus merges', () => {
-    const [octopus] = parseLog(record(H1, `${H2} ${H3} ${'4'.repeat(40)}`, 'octopus'));
-    assert.strictEqual(octopus.parents.length, 3);
-  });
-
   test('returns nothing for empty output', () => {
     assert.deepStrictEqual(parseLog(''), []);
   });

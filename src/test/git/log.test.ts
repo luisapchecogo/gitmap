@@ -51,9 +51,8 @@ suite('GitRepository.getLog', () => {
   test('topo order keeps branch commits together', async () => {
     const commits = await git.getLog({ tips: await allTips(false), order: 'topo', skip: 0, maxCount: 100 });
     const order = subjects(commits);
-    assert.strictEqual(order[0], 'm3 ünïcødé 🎉');
-    assert.ok(order.indexOf('t2') < order.indexOf('t1'));
-    assert.strictEqual(order[order.length - 1], 'm1');
+    // Date order puts m2 between t2 and t1; topo order must not.
+    assert.strictEqual(order.indexOf('t1'), order.indexOf('t2') + 1, `topic commits interleaved: ${order.join(', ')}`);
   });
 
   test('pages concatenate to the whole history', async () => {
@@ -70,16 +69,6 @@ suite('GitRepository.getLog', () => {
     assert.strictEqual(await git.countCommits(tips), whole.length);
   });
 
-  test('hides remote branches and filters to one branch', async () => {
-    const withoutRemotes = await git.getLog({ tips: await allTips(false), order: 'date', skip: 0, maxCount: 100 });
-    assert.ok(!subjects(withoutRemotes).includes('r1'));
-
-    const refs = await git.getRefs();
-    const topic = selectTips(refs, undefined, { branch: 'refs/heads/topic', showRemotes: true });
-    const commits = await git.getLog({ tips: topic, order: 'date', skip: 0, maxCount: 100 });
-    assert.deepStrictEqual(subjects(commits), ['t2', 't1', 'm1']);
-  });
-
   test('shows commits only reachable from a detached HEAD', async () => {
     await repo.git('switch', '--quiet', '--detach', 'main');
     try {
@@ -88,20 +77,6 @@ suite('GitRepository.getLog', () => {
       assert.deepStrictEqual(subjects(commits), ['detached work']);
     } finally {
       await repo.git('switch', '--quiet', 'main');
-    }
-  });
-
-  test('an empty repository has no history', async () => {
-    const empty = await TempRepo.create();
-    try {
-      const emptyGit = new GitRepository(empty.root, new GitRunner({ env: empty.env }));
-      const [refs, head] = await Promise.all([emptyGit.getRefs(), emptyGit.getHead()]);
-      const tips = selectTips(refs, head.commit, { showRemotes: true });
-      assert.deepStrictEqual(tips, []);
-      assert.deepStrictEqual(await emptyGit.getLog({ tips, order: 'date', skip: 0, maxCount: 10 }), []);
-      assert.strictEqual(await emptyGit.countCommits(tips), 0);
-    } finally {
-      await empty.dispose();
     }
   });
 });

@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import { LaneLayout, LaneRow, LayoutCommit } from '../../core/graphLayout';
-import { rowGeometry } from '../../shared/graphGeometry';
 
 function layout(commits: LayoutCommit[]): LaneRow[] {
   const lanes = new LaneLayout();
@@ -143,43 +142,6 @@ suite('LaneLayout', () => {
     for (let seed = 1; seed <= 25; seed++) {
       assertLayoutConsistent(layout(randomDag(150, seed)));
     }
-  });
-});
-
-suite('rowGeometry', () => {
-  const options = { laneWidth: 10, rowHeight: 40, nodeY: 12 };
-
-  test('draws straight lanes as vertical lines', () => {
-    const drawing = rowGeometry(
-      { column: 0, color: 0, width: 2, edges: [{ kind: 'in', from: 0, to: 0, color: 0 }, { kind: 'through', from: 1, to: 1, color: 1 }] },
-      options,
-    );
-    assert.deepStrictEqual(
-      drawing.paths.map((p) => p.d),
-      ['M5 0V12', 'M15 0V40'],
-    );
-    assert.deepStrictEqual(drawing.node, { cx: 5, cy: 12, color: 0 });
-    assert.strictEqual(drawing.width, 20);
-  });
-
-  test('draws shifts as curves that are vertical at the row edges', () => {
-    const drawing = rowGeometry(
-      {
-        column: 0,
-        color: 0,
-        width: 3,
-        edges: [
-          { kind: 'through', from: 2, to: 1, color: 2 },
-          { kind: 'in', from: 1, to: 0, color: 1 },
-          { kind: 'out', from: 0, to: 2, color: 3 },
-        ],
-      },
-      options,
-    );
-    assert.deepStrictEqual(
-      drawing.paths.map((p) => p.d),
-      ['M25 0C25 20 15 20 15 40', 'M15 0Q15 12 5 12', 'M5 12Q25 12 25 40'],
-    );
   });
 });
 

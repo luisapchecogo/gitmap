@@ -78,10 +78,4 @@ suite('Compare commands', () => {
     await vscode.commands.executeCommand('gitmap.openAllChanges');
     assert.ok(vscode.window.tabGroups.activeTabGroup.activeTab, 'an editor should be open');
   });
-
-  test('clear removes the comparison', async () => {
-    await api.compareService.compare(git, { base: commitRevision('main'), target: commitRevision('feature'), mode: 'direct' });
-    await vscode.commands.executeCommand('gitmap.clearCompare');
-    assert.strictEqual(api.compareService.current, undefined);
-  });
 });

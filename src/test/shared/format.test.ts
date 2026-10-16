@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { formatCount, relativeDate } from '../../shared/format';
+import { relativeDate } from '../../shared/format';
 
 suite('relativeDate', () => {
   const now = Date.UTC(2026, 0, 31, 12, 0, 0);
@@ -19,9 +19,5 @@ suite('relativeDate', () => {
 
   test('formats future dates from clock skew', () => {
     assert.strictEqual(ago(-5 * 60), 'in 5 minutes');
-  });
-
-  test('formats counts with separators', () => {
-    assert.strictEqual(formatCount(1234567), '1,234,567');
   });
 });

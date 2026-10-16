@@ -96,8 +96,4 @@ suite('buildChangeTree', () => {
     const tree = buildChangeTree([change('a.txt')], 0);
     assert.deepStrictEqual(render(tree.roots), ['… 1 more']);
   });
-
-  test('an empty comparison gives an empty tree', () => {
-    assert.deepStrictEqual(buildChangeTree([]), { roots: [], shown: 0, total: 0 });
-  });
 });

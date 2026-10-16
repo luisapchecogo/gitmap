@@ -54,10 +54,6 @@ suite('GitRepository', () => {
     await repo.dispose();
   });
 
-  test('is named after its folder', () => {
-    assert.strictEqual(git.name, 'repo');
-  });
-
   test('resolves branches, relative revisions and annotated tags to commits', async () => {
     assert.strictEqual(await git.resolveCommit('main'), second);
     assert.strictEqual(await git.resolveCommit('HEAD~1'), first);

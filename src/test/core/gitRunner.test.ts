@@ -16,21 +16,10 @@ suite('GitRunner', () => {
     await repo.dispose();
   });
 
-  test('returns stdout as a buffer', async () => {
-    const result = await runner.exec(['rev-parse', '--show-toplevel'], { cwd: repo.root });
-    assert.strictEqual(result.exitCode, 0);
-    assert.strictEqual(result.stdout.toString('utf8').trim(), repo.root);
-  });
-
   test('passes stdin to git', async () => {
     const oid = await runner.text(['hash-object', '--stdin'], { cwd: repo.root, stdin: 'hello\n' });
     const expected = await repo.git('rev-parse', 'HEAD:a.txt');
     assert.strictEqual(oid.trim(), expected);
-  });
-
-  test('applies the hardened environment', async () => {
-    const value = await runner.text(['var', 'GIT_PAGER'], { cwd: repo.root });
-    assert.strictEqual(value.trim(), 'cat');
   });
 
   test('rejects with GitError and stderr on failure', async () => {

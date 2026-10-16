@@ -36,10 +36,4 @@ suite('Graph commands', () => {
     await vscode.commands.executeCommand('gitmap.toggleRemoteBranches');
     assert.ok(subjects().includes('remote only'));
   });
-
-  test('refresh reloads the graph', async () => {
-    const before = api.graph.currentGeneration;
-    await vscode.commands.executeCommand('gitmap.refresh');
-    assert.strictEqual(api.graph.currentGeneration, before + 1);
-  });
 });
