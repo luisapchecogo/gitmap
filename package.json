@@ -30,6 +30,16 @@
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "GitMap runs git, which can execute commands from a repository's configuration, so it needs a trusted workspace."
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "GitMap runs the git command line, which needs files on disk."
+    }
+  },
   "contributes": {
     "viewsContainers": {
       "activitybar": [
