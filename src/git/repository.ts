@@ -1,9 +1,17 @@
 import * as path from 'path';
 import { FileChange, parseRawDiff } from '../core/diffParser';
 import { GitExecOptions, GitResult, GitRunner } from '../core/gitRunner';
+import { GitRef, parseRefs, REF_FORMAT, REF_PATTERNS } from '../core/refsParser';
 import { Revision, revisionLabel } from '../core/revision';
 
 export type RepoCallOptions = Omit<GitExecOptions, 'cwd'>;
+
+export interface HeadState {
+  /** Commit HEAD points to; `undefined` in a repository with no commits. */
+  commit: string | undefined;
+  /** Checked-out branch; `undefined` when HEAD is detached. */
+  branch: string | undefined;
+}
 
 export interface ChangesRequest {
   /** Left side. Must not be the working tree. */
@@ -71,6 +79,22 @@ export class GitRepository {
     });
     const hash = result.stdout.toString('utf8').trim();
     return result.exitCode === 0 && hash ? hash : undefined;
+  }
+
+  /** Local branches, remote-tracking branches and tags. */
+  async getRefs(options: RepoCallOptions = {}): Promise<GitRef[]> {
+    const output = await this.text(['for-each-ref', `--format=${REF_FORMAT}`, ...REF_PATTERNS], options);
+    return parseRefs(output);
+  }
+
+  async getHead(options: RepoCallOptions = {}): Promise<HeadState> {
+    const [commit, branch] = await Promise.all([
+      this.resolveCommit('HEAD', options),
+      this.exec(['symbolic-ref', '--quiet', '--short', 'HEAD'], { ...options, okExitCodes: [0, 1, 128] }).then((result) =>
+        result.exitCode === 0 ? result.stdout.toString('utf8').trim() || undefined : undefined,
+      ),
+    ]);
+    return { commit, branch };
   }
 
   /** Hash of the empty tree in this repository's object format (SHA-1 or SHA-256). */
