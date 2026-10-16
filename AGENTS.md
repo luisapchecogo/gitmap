@@ -31,7 +31,25 @@ Invariants to keep:
 - **Webviews are disposable**: side bar webviews are destroyed when hidden, so the host replays its state when the webview posts `ready`. Reloads bump a generation number, and stale results are dropped.
 - **Graph loads pin their tips** (hashes resolved once per load); never use `git log --all`.
 - **`gitmap:` URIs are self-contained** (repo path + blob id), because diff editors are restored after a reload before discovery finishes. The file system provider is registered synchronously in `activate()`.
-- Tests: pure modules get unit tests; git behavior is tested against throwaway repositories (`src/test/helpers/tempRepo.ts`, isolated config, fixed dates); extension behavior goes through the internals returned by `activate()` (`GitMapTestApi`, which is not a public API).
+- Tests: pure modules get unit tests; git behavior is tested against throwaway repositories (`src/test/helpers/tempRepo.ts`, isolated config, fixed dates); extension behavior goes through the internals returned by `activate()` (`GitMapTestApi`, which is not a public API). What a test must do to belong in the suite is in **Tests** below.
+
+## Tests — only tests that can catch real bugs
+
+A passing suite is evidence only for what its tests actually check. Tests exist to find bugs, not to raise the pass count or to reassure the agent that wrote the code. Every test must be able to fail because of a plausible bug in GitMap's own code.
+
+- Check GitMap against something it does not control: real git output in a throwaway repository, VS Code's real state (open editors, the `gitmap:` file system), results worked out by hand from the expected behavior, or invariants (paged history equals the whole history; layout rows connect).
+- Don't write circular or redundant tests:
+  - **Tautologies**: asserting what the framework or the test's own setup already guarantees (`isActive` right after `activate()`, reading back a value the test just set, empty input through code that returns early).
+  - **Restated implementation**: expected values copied from the code's own formulas, constants or helpers (exact SVG path strings, the runner's env table, comparing a result with the function that produced it), or tests of one-line pass-through handlers.
+  - **Platform behavior**: testing `toLocaleString`, `URLSearchParams` or git itself instead of how GitMap uses them.
+  - **Implementation details**: internal counters or private state (such as the load generation number) instead of behavior a user or caller can observe.
+  - **Duplicates**: a test assembled only from behavior other tests already cover, with no new scenario or edge case.
+  - **Assertions that can't fail**: checks that still pass when the behavior under test is removed, like a "topo order" test that date order also satisfies.
+  - **Mocks checking mocks**: asserting that a stub the test set up was called. Use a throwaway repository instead of mocking git.
+- Prove every new test can fail: break the behavior on purpose (or revert the fix), watch the test fail, then restore the code. Say so in the commit's **Verified** section. When practical, a bug fix comes with a test that fails without the fix.
+- Prefer one realistic scenario with a few meaningful assertions over many shallow tests. Never add tests to grow the count.
+- When reporting results, say what the tests cover and what they don't (visual rendering, the manual checks), instead of presenting the pass count as proof of more.
+- An existing test that breaks these rules is removed or fixed in its own `test:` commit.
 
 ## Secrets — never commit credentials
 
@@ -81,6 +99,7 @@ Node 24 is required (`.nvmrc`). Agent shells may start on an older default Node;
 - `npm run compile` — type-check, lint, bundle (`dist/extension.js`)
 - `npm run lint` / `npm run check-types`
 - `npm test` — compiles tests to `out/`, then runs them in a downloaded VS Code (`.vscode-test/`)
+- `npm run compile-tests && npx vscode-test --grep "<test name>"` — run only matching tests (for example, to watch a new test fail)
 - `npm run secrets` — secret scan
 - `npm run vsix` — package a `.vsix`
 
