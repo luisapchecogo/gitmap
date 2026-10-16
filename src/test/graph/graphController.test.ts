@@ -98,7 +98,7 @@ suite('GraphController', () => {
     assert.strictEqual(lastReady?.generation, current);
     const afterIndex = lastReady ? sink.messages.indexOf(lastReady) : -1;
     assert.ok(
-      sink.messages.slice(afterIndex).every((m) => m.type === 'toolbar' || m.generation === current),
+      sink.messages.slice(afterIndex).every((m) => !('generation' in m) || m.generation === current),
       'nothing from an older load arrives after the newest one',
     );
     assert.ok(

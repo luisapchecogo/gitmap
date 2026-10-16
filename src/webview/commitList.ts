@@ -39,9 +39,36 @@ export class CommitList {
   private requested = false;
   /** Widest graph so far, in lanes: every row reserves this much room. */
   private graphLanes = 1;
+  private selected: string | undefined;
+  private markers: { base?: string; target?: string } = {};
 
-  constructor(private readonly onLoadMore: () => void) {
+  constructor(
+    private readonly onLoadMore: () => void,
+    private readonly onOpen: (hash: string) => void,
+  ) {
     this.element = h('div', 'list');
+    this.element.tabIndex = 0;
+    this.element.setAttribute('aria-label', 'Commits');
+    this.element.addEventListener('click', (event) => {
+      const row = this.rowFrom(event.target);
+      if (row) {
+        this.select(row);
+      }
+    });
+    this.element.addEventListener('dblclick', (event) => {
+      const row = this.rowFrom(event.target);
+      if (row?.dataset.hash) {
+        this.onOpen(row.dataset.hash);
+      }
+    });
+    this.element.addEventListener('contextmenu', (event) => {
+      // Right-click selects the row the context menu is for.
+      const row = this.rowFrom(event.target);
+      if (row) {
+        this.select(row);
+      }
+    });
+    this.element.addEventListener('keydown', (event) => this.onKey(event));
     this.rowsElement = h('div', 'rows');
     this.rowsElement.setAttribute('role', 'list');
     this.sentinel = h('div', 'sentinel');
@@ -52,6 +79,14 @@ export class CommitList {
       rootMargin: '0px 0px 600px 0px',
     });
     this.observer.observe(this.sentinel);
+  }
+
+  /** Marks the rows of the current base and target commits. */
+  setMarkers(base: string | undefined, target: string | undefined): void {
+    this.markers = { base, target };
+    for (const row of this.rowsElement.children) {
+      this.applyMarkers(row as HTMLElement);
+    }
   }
 
   reset(rows: readonly CommitRow[], hasMore: boolean): void {
@@ -105,18 +140,82 @@ export class CommitList {
     }
   }
 
+  private rowFrom(target: EventTarget | null): HTMLElement | undefined {
+    const row = target instanceof Element ? target.closest<HTMLElement>('.row') : null;
+    return row ?? undefined;
+  }
+
+  private select(row: HTMLElement): void {
+    this.rowsElement.querySelector('.row.selected')?.classList.remove('selected');
+    row.classList.add('selected');
+    this.selected = row.dataset.hash;
+  }
+
+  private onKey(event: KeyboardEvent): void {
+    const current = this.selected
+      ? this.rowsElement.querySelector<HTMLElement>(`.row[data-hash="${CSS.escape(this.selected)}"]`)
+      : null;
+    let next: Element | null;
+    switch (event.key) {
+      case 'ArrowDown':
+        next = current ? current.nextElementSibling : this.rowsElement.firstElementChild;
+        break;
+      case 'ArrowUp':
+        next = current ? current.previousElementSibling : this.rowsElement.firstElementChild;
+        break;
+      case 'Enter':
+        if (current?.dataset.hash) {
+          this.onOpen(current.dataset.hash);
+        }
+        event.preventDefault();
+        return;
+      default:
+        return;
+    }
+    event.preventDefault();
+    if (next instanceof HTMLElement) {
+      this.select(next);
+      next.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  private applyMarkers(element: HTMLElement): void {
+    const hash = element.dataset.hash;
+    const isBase = !!hash && hash === this.markers.base;
+    const isTarget = !!hash && hash === this.markers.target;
+    element.classList.toggle('is-base', isBase);
+    element.classList.toggle('is-target', isTarget);
+    const markers = element.querySelector('.markers');
+    if (markers) {
+      markers.replaceChildren(
+        ...(isBase ? [h('span', 'marker base', 'BASE')] : []),
+        ...(isTarget ? [h('span', 'marker target', 'TARGET')] : []),
+      );
+    }
+  }
+
   private renderRow(row: CommitRow): HTMLElement {
     const element = h('div', row.head ? 'row head' : 'row');
     element.setAttribute('role', 'listitem');
     element.dataset.hash = row.hash;
     element.title = tooltip(row);
+    // Read by VS Code for the webview/context menu (see package.json); the
+    // hash reaches the gitmap.graph.* commands as their argument.
+    element.dataset.vscodeContext = JSON.stringify({
+      webviewSection: 'commit',
+      hash: row.hash,
+      preventDefaultContextMenuItems: true,
+    });
+    if (row.hash === this.selected) {
+      element.classList.add('selected');
+    }
 
     const graph = h('div', 'graph');
     graph.append(renderGraphRow(row.graph, { merge: row.parents.length > 1, head: row.head }));
     const text = h('div', 'text');
 
     const line1 = h('div', 'line1');
-    line1.append(h('span', 'subject', row.subject));
+    line1.append(h('span', 'markers'), h('span', 'subject', row.subject));
     if (row.refs.length > 0) {
       const refs = h('span', 'refs');
       for (const ref of row.refs) {
@@ -132,6 +231,7 @@ export class CommitList {
 
     text.append(line1, line2);
     element.append(graph, text);
+    this.applyMarkers(element);
     return element;
   }
 }

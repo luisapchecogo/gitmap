@@ -6,6 +6,7 @@ import { CompareService } from './compare/compareService';
 import { CompareState } from './compare/compareState';
 import { GitFileSystemProvider } from './compare/gitFileSystemProvider';
 import { GIT_SCHEME } from './compare/gitUri';
+import { CompareFooter } from './graph/compareFooter';
 import { registerGraphCommands } from './graph/graphCommands';
 import { GraphController } from './graph/graphController';
 import { GRAPH_VIEW_ID, GraphViewProvider } from './graph/graphViewProvider';
@@ -23,6 +24,7 @@ export interface GitMapTestApi {
   compareService: CompareService;
   changesTree: ChangesTreeProvider;
   graph: GraphController;
+  footer: CompareFooter;
 }
 
 export function activate(context: vscode.ExtensionContext): GitMapTestApi {
@@ -49,8 +51,9 @@ export function activate(context: vscode.ExtensionContext): GitMapTestApi {
     service,
     changesTree,
     vscode.window.registerFileDecorationProvider(new ChangeDecorationProvider()),
-    ...registerCompareCommands({ session, state, service, changesTree }),
   );
+  const compareDeps = { session, state, service, changesTree };
+  context.subscriptions.push(...registerCompareCommands(compareDeps));
 
   const graph = new GraphController({
     pageSize: () => vscode.workspace.getConfiguration('gitmap').get<number>('graph.pageSize', 300),
@@ -61,6 +64,7 @@ export function activate(context: vscode.ExtensionContext): GitMapTestApi {
     },
     repositoryCount: () => session.repositories.length,
   });
+  const footer = new CompareFooter(compareDeps, graph);
   let discovering = true;
   const showActiveRepository = (): Promise<void> => graph.setRepository(session.activeRepository, discovering);
   void session.ready().then(() => {
@@ -71,16 +75,17 @@ export function activate(context: vscode.ExtensionContext): GitMapTestApi {
     { dispose: () => graph.dispose() },
     session.onDidChangeActiveRepository(() => void showActiveRepository()),
     session.onDidChangeRepositories(() => graph.postToolbar()),
-    ...registerGraphCommands(session, store, graph),
+    ...registerGraphCommands(session, store, graph, compareDeps),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration('gitmap.graph')) {
         void graph.reload();
       }
     }),
-    vscode.window.registerWebviewViewProvider(GRAPH_VIEW_ID, new GraphViewProvider(context.extensionUri, graph)),
+    footer,
+    vscode.window.registerWebviewViewProvider(GRAPH_VIEW_ID, new GraphViewProvider(context.extensionUri, graph, footer)),
   );
 
-  return { session, compareState: state, compareService: service, changesTree, graph };
+  return { session, compareState: state, compareService: service, changesTree, graph, footer };
 }
 
 export function deactivate(): void {}

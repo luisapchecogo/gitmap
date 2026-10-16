@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { HostMessage, ToolbarCommand, WebviewMessage } from '../shared/protocol';
+import { FooterAction, HostMessage, ToolbarCommand, WebviewMessage } from '../shared/protocol';
+import { CompareFooter } from './compareFooter';
 import { GraphController, GraphSink } from './graphController';
 import { renderGraphHtml } from './html';
 
@@ -13,6 +14,8 @@ const TOOLBAR_COMMANDS: ReadonlySet<ToolbarCommand> = new Set<ToolbarCommand>([
   'refresh',
 ]);
 
+const FOOTER_ACTIONS: ReadonlySet<FooterAction> = new Set<FooterAction>(['pickBase', 'pickTarget', 'swap', 'toggleMode', 'compare']);
+
 /**
  * Hosts the graph webview in the GitMap side bar. All state lives in the
  * GraphController; this class only connects a webview to it.
@@ -23,6 +26,7 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly controller: GraphController,
+    private readonly footer: CompareFooter,
   ) {}
 
   get visible(): boolean {
@@ -43,8 +47,17 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
         void webview.postMessage(message);
       },
     };
+    const postFooter = (): void => {
+      void this.footer.state().then((compare) => sink.post({ type: 'compare', compare }));
+    };
     const subscriptions = [
-      webview.onDidReceiveMessage((message: WebviewMessage) => this.handle(message, sink)),
+      webview.onDidReceiveMessage((message: WebviewMessage) => {
+        if (message.type === 'ready') {
+          postFooter();
+        }
+        this.handle(message, sink);
+      }),
+      this.footer.onDidChange(postFooter),
       view.onDidDispose(() => {
         this.controller.detach(sink);
         if (this.view === view) {
@@ -68,6 +81,14 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
         if (TOOLBAR_COMMANDS.has(message.command)) {
           void vscode.commands.executeCommand(`gitmap.${message.command}`);
         }
+        break;
+      case 'footer':
+        if (FOOTER_ACTIONS.has(message.action)) {
+          void this.footer.run(message.action);
+        }
+        break;
+      case 'openCommit':
+        void vscode.commands.executeCommand('gitmap.graph.showCommitChanges', { hash: message.hash });
         break;
     }
   }

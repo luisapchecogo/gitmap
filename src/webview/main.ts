@@ -5,6 +5,7 @@ import { formatCount } from '../shared/format';
 import { GraphStatus, HostMessage, WebviewMessage } from '../shared/protocol';
 import { CommitList } from './commitList';
 import { h, icon } from './dom';
+import { Footer } from './footer';
 import { Toolbar } from './toolbar';
 
 const vscode = acquireVsCodeApi();
@@ -21,8 +22,12 @@ const toolbar = new Toolbar((command) => post({ type: 'command', command }));
 const statusLine = h('div', 'status');
 statusLine.setAttribute('aria-live', 'polite');
 const placeholder = h('div', 'placeholder');
-const list = new CommitList(() => post({ type: 'loadMore', generation }));
-app.append(toolbar.element, statusLine, placeholder, list.element);
+const list = new CommitList(
+  () => post({ type: 'loadMore', generation }),
+  (hash) => post({ type: 'openCommit', hash }),
+);
+const footer = new Footer((action) => post({ type: 'footer', action }));
+app.append(toolbar.element, statusLine, placeholder, list.element, footer.element);
 
 function renderStatus(): void {
   placeholder.replaceChildren();
@@ -69,6 +74,10 @@ window.addEventListener('message', (event: MessageEvent<HostMessage>) => {
   switch (message.type) {
     case 'toolbar':
       toolbar.update(message.toolbar);
+      break;
+    case 'compare':
+      footer.update(message.compare);
+      list.setMarkers(message.compare.baseHash, message.compare.targetHash);
       break;
     case 'reset':
       generation = message.generation;

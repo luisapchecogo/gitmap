@@ -158,6 +158,31 @@
         "title": "Toggle Remote Branches in Graph",
         "category": "GitMap",
         "icon": "$(cloud)"
+      },
+      {
+        "command": "gitmap.graph.setBase",
+        "title": "Set as Base",
+        "category": "GitMap"
+      },
+      {
+        "command": "gitmap.graph.setTarget",
+        "title": "Set as Target",
+        "category": "GitMap"
+      },
+      {
+        "command": "gitmap.graph.compareWithWorkingTree",
+        "title": "Compare with Working Tree",
+        "category": "GitMap"
+      },
+      {
+        "command": "gitmap.graph.showCommitChanges",
+        "title": "Show Commit Changes",
+        "category": "GitMap"
+      },
+      {
+        "command": "gitmap.graph.copyHash",
+        "title": "Copy Commit Hash",
+        "category": "GitMap"
       }
     ],
     "menus": {
@@ -226,6 +251,53 @@
         {
           "command": "gitmap.showMoreFiles",
           "when": "false"
+        },
+        {
+          "command": "gitmap.graph.setBase",
+          "when": "false"
+        },
+        {
+          "command": "gitmap.graph.setTarget",
+          "when": "false"
+        },
+        {
+          "command": "gitmap.graph.compareWithWorkingTree",
+          "when": "false"
+        },
+        {
+          "command": "gitmap.graph.showCommitChanges",
+          "when": "false"
+        },
+        {
+          "command": "gitmap.graph.copyHash",
+          "when": "false"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "gitmap.graph.showCommitChanges",
+          "when": "webviewId == 'gitmap.graph' && webviewSection == 'commit'",
+          "group": "1_compare@1"
+        },
+        {
+          "command": "gitmap.graph.compareWithWorkingTree",
+          "when": "webviewId == 'gitmap.graph' && webviewSection == 'commit'",
+          "group": "1_compare@2"
+        },
+        {
+          "command": "gitmap.graph.setBase",
+          "when": "webviewId == 'gitmap.graph' && webviewSection == 'commit'",
+          "group": "2_select@1"
+        },
+        {
+          "command": "gitmap.graph.setTarget",
+          "when": "webviewId == 'gitmap.graph' && webviewSection == 'commit'",
+          "group": "2_select@2"
+        },
+        {
+          "command": "gitmap.graph.copyHash",
+          "when": "webviewId == 'gitmap.graph' && webviewSection == 'commit'",
+          "group": "3_copy@1"
         }
       ]
     },

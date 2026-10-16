@@ -50,9 +50,27 @@ export interface ToolbarState {
 /** Toolbar buttons; each runs the GitMap command of the same name. */
 export type ToolbarCommand = 'selectRepository' | 'selectBranch' | 'toggleRemoteBranches' | 'refresh';
 
+/** What the compare footer shows. */
+export interface CompareFooterState {
+  /** False when there is no repository to compare in. */
+  enabled: boolean;
+  baseLabel: string;
+  targetLabel: string;
+  /** Commits the sides resolve to, for the BASE/TARGET row markers. */
+  baseHash?: string;
+  targetHash?: string;
+  /** PR-style: compare from the merge base. */
+  mergeBase: boolean;
+  /** The working tree can only be the target, so swapping is not possible. */
+  canSwap: boolean;
+}
+
+export type FooterAction = 'pickBase' | 'pickTarget' | 'swap' | 'toggleMode' | 'compare';
+
 /** Host → webview. */
 export type HostMessage =
   | { type: 'toolbar'; toolbar: ToolbarState }
+  | { type: 'compare'; compare: CompareFooterState }
   | {
       type: 'reset';
       /** Increments on every (re)load; replies about older loads are ignored. */
@@ -70,4 +88,7 @@ export type HostMessage =
 export type WebviewMessage =
   | { type: 'ready' }
   | { type: 'loadMore'; generation: number }
-  | { type: 'command'; command: ToolbarCommand };
+  | { type: 'command'; command: ToolbarCommand }
+  | { type: 'footer'; action: FooterAction }
+  /** Double-click or Enter on a row: show that commit's changes. */
+  | { type: 'openCommit'; hash: string };

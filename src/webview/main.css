@@ -118,6 +118,71 @@ button {
   background: var(--vscode-toolbar-hoverBackground);
 }
 
+.footer {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 6px;
+  border-top: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border, transparent));
+}
+
+.footer .sides {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.footer .sides .picker {
+  flex: 1 1 0;
+}
+
+.footer .side {
+  flex: none;
+  font-size: 10px;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.footer .icon-button {
+  margin-left: 0;
+}
+
+.footer .actions {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.primary {
+  height: 24px;
+  padding: 0 12px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  cursor: pointer;
+}
+
+.primary:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.primary:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .status {
   flex: none;
   padding: 2px 8px 3px;
@@ -152,8 +217,56 @@ button {
   user-select: none;
 }
 
+.list:focus {
+  outline: none;
+}
+
 .row:hover {
   background: var(--vscode-list-hoverBackground);
+}
+
+.row.selected {
+  background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+.list:focus .row.selected {
+  color: var(--vscode-list-activeSelectionForeground);
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+.list:focus .row.selected .line2 {
+  color: inherit;
+}
+
+.row.is-base {
+  box-shadow: inset 2px 0 0 var(--vscode-charts-orange, #d18616);
+}
+
+.row.is-target {
+  box-shadow: inset 2px 0 0 var(--vscode-charts-green, #89d185);
+}
+
+.markers {
+  display: contents;
+}
+
+.marker {
+  flex: none;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  letter-spacing: 0.04em;
+  color: var(--vscode-sideBar-background);
+}
+
+.marker.base {
+  background: var(--vscode-charts-orange, #d18616);
+}
+
+.marker.target {
+  background: var(--vscode-charts-green, #89d185);
 }
 
 .graph {
