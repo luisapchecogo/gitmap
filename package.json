@@ -28,7 +28,9 @@
     "commits",
     "review"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onFileSystem:gitmap"
+  ],
   "main": "./dist/extension.js",
   "capabilities": {
     "untrustedWorkspaces": {
