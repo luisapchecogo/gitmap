@@ -1,5 +1,16 @@
 /* Graph webview styles. Colors come from VS Code's theme variables. */
 
+:root {
+  --row-height: 40px;
+  --line1-height: 22px;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   padding: 0;
   margin: 0;
@@ -7,4 +18,151 @@ body {
   background: var(--vscode-sideBar-background);
   font-family: var(--vscode-font-family);
   font-size: var(--vscode-font-size);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.status {
+  flex: none;
+  padding: 2px 8px 3px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status:empty {
+  display: none;
+}
+
+.placeholder {
+  padding: 12px;
+  color: var(--vscode-descriptionForeground);
+  overflow-wrap: anywhere;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  height: var(--row-height);
+  cursor: default;
+  user-select: none;
+}
+
+.row:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.graph {
+  flex: none;
+  width: 8px;
+  height: var(--row-height);
+  overflow: hidden;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px 0 2px;
+}
+
+.line1 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--line1-height);
+}
+
+.subject {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row.head .subject {
+  font-weight: 600;
+}
+
+.refs {
+  display: flex;
+  flex: 0 1 auto;
+  gap: 3px;
+  min-width: 0;
+  max-width: 55%;
+  overflow: hidden;
+}
+
+.badge {
+  flex: 0 1 auto;
+  min-width: 24px;
+  max-width: 140px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge.head {
+  color: var(--vscode-charts-blue, #3794ff);
+}
+
+.badge.remote {
+  color: var(--vscode-charts-purple, #b180d7);
+}
+
+.badge.tag {
+  color: var(--vscode-charts-yellow, #cca700);
+}
+
+.badge.current {
+  font-weight: 700;
+}
+
+.line2 {
+  height: calc(var(--row-height) - var(--line1-height));
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hash {
+  font-family: var(--vscode-editor-font-family);
+}
+
+.sentinel {
+  height: 1px;
+}
+
+.codicon-modifier-spin {
+  animation: codicon-spin 1.5s steps(30) infinite;
+}
+
+@keyframes codicon-spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }

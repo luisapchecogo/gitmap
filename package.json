@@ -58,8 +58,15 @@
     "views": {
       "gitmap": [
         {
+          "type": "webview",
+          "id": "gitmap.graph",
+          "name": "Graph",
+          "initialSize": 3
+        },
+        {
           "id": "gitmap.compare",
-          "name": "Changes"
+          "name": "Changes",
+          "initialSize": 2
         }
       ]
     },
@@ -253,6 +260,26 @@
     "configuration": {
       "title": "GitMap",
       "properties": {
+        "gitmap.graph.pageSize": {
+          "type": "number",
+          "default": 300,
+          "minimum": 50,
+          "maximum": 5000,
+          "markdownDescription": "How many commits the Graph view loads at a time. More are loaded as you scroll."
+        },
+        "gitmap.graph.commitOrder": {
+          "type": "string",
+          "enum": [
+            "date",
+            "topo"
+          ],
+          "default": "date",
+          "enumDescriptions": [
+            "Newest commits first (`git log --date-order`).",
+            "Keep each branch's commits together (`git log --topo-order`). Can be slower on large repositories."
+          ],
+          "markdownDescription": "Order of commits in the Graph view."
+        },
         "gitmap.compare.maxFiles": {
           "type": "number",
           "default": 1000,
