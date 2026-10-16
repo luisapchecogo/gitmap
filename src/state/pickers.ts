@@ -155,3 +155,47 @@ export function pickRevision(repository: GitRepository, options: PickRevisionOpt
     quickPick.show();
   });
 }
+
+interface BranchItem extends vscode.QuickPickItem {
+  /** Full ref name, or `undefined` for "all branches". */
+  branch?: string;
+}
+
+/**
+ * Asks which branch the graph should show. Resolves to `{ branch }`, where
+ * `branch` is a full ref name or `undefined` for all branches, or to
+ * `undefined` if the user cancels.
+ */
+export async function pickBranchFilter(
+  repository: GitRepository,
+  current: string | undefined,
+): Promise<{ branch: string | undefined } | undefined> {
+  const mark = (selected: boolean): string => (selected ? '$(check) ' : '');
+  const items = repository.getRefs().then((refs): BranchItem[] => {
+    const all: BranchItem = {
+      label: `${mark(!current)}All branches`,
+      description: 'Local and remote branches, tags and HEAD',
+    };
+    const section = (label: string, kind: GitRef['kind']): BranchItem[] => {
+      const matching = refs.filter((ref) => ref.kind === kind);
+      if (matching.length === 0) {
+        return [];
+      }
+      return [
+        { label, kind: vscode.QuickPickItemKind.Separator },
+        ...matching.map((ref) => ({
+          label: `${mark(ref.fullName === current)}$(${kind === 'remote' ? 'cloud' : 'git-branch'}) ${ref.name}`,
+          description: shortHash(ref.commit) + (ref.isHead ? ' · current branch' : ''),
+          branch: ref.fullName,
+        })),
+      ];
+    };
+    return [all, ...section('Branches', 'head'), ...section('Remote Branches', 'remote')];
+  });
+  const picked = await vscode.window.showQuickPick(items, {
+    title: `Show in Graph — ${repository.name}`,
+    placeHolder: 'Show all branches, or pick one branch',
+    matchOnDescription: true,
+  });
+  return picked ? { branch: picked.branch } : undefined;
+}

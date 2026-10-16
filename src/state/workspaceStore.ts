@@ -8,6 +8,10 @@ export interface RepoSettings {
   base?: Revision;
   target?: Revision;
   mode?: CompareMode;
+  /** Graph filter: full name of the one branch shown, or undefined for all. */
+  graphBranch?: string;
+  /** Graph filter: include remote-tracking branches (default true). */
+  showRemotes?: boolean;
 }
 
 const KEY = 'gitmap.repositories';

@@ -1,10 +1,10 @@
 import { LaneLayout } from '../core/graphLayout';
 import { CommitInfo } from '../core/logParser';
-import { GitRef, refsByCommit, selectTips } from '../core/refsParser';
+import { GitRef, GraphFilter, refsByCommit, selectTips } from '../core/refsParser';
 import { isCancellation } from '../core/gitRunner';
 import { shortHash } from '../core/revision';
 import { CommitOrder, GitRepository } from '../git/repository';
-import { CommitRow, GraphStatus, HostMessage } from '../shared/protocol';
+import { CommitRow, GraphStatus, HostMessage, ToolbarState } from '../shared/protocol';
 
 /** Where the controller sends its output (the webview, or a test). */
 export interface GraphSink {
@@ -14,6 +14,15 @@ export interface GraphSink {
 export interface GraphSettings {
   pageSize(): number;
   commitOrder(): CommitOrder;
+  /** The branch filter saved for a repository. */
+  filter(repository: GitRepository): GraphFilter;
+  /** Number of repositories in the workspace (for the toolbar). */
+  repositoryCount(): number;
+}
+
+/** `refs/heads/main` → `main`, `refs/remotes/origin/x` → `origin/x`. */
+export function shortRefName(fullName: string): string {
+  return fullName.replace(/^refs\/(heads|remotes|tags)\//, '');
 }
 
 /**
@@ -38,6 +47,7 @@ export class GraphController {
   private tips: string[] = [];
   private badges = new Map<string, GitRef[]>();
   private headCommit: string | undefined;
+  private filter: GraphFilter = { showRemotes: true };
   /** Lane state carried from page to page; recreated on every reload. */
   private layout = new LaneLayout();
   private load: AbortController | undefined;
@@ -53,10 +63,32 @@ export class GraphController {
     return this.rows;
   }
 
+  get currentRepository(): GitRepository | undefined {
+    return this.repository;
+  }
+
+  /** The filter of the current load (after falling back from a deleted branch). */
+  get currentFilter(): GraphFilter {
+    return this.filter;
+  }
+
   /** Connects a renderer and replays the current state to it. */
   attach(sink: GraphSink): void {
     this.sink = sink;
+    this.postToolbar();
     this.postReset();
+  }
+
+  /** Re-sends the toolbar (e.g. when the number of repositories changes). */
+  postToolbar(): void {
+    const toolbar: ToolbarState = {
+      repositoryName: this.repository?.name,
+      repositoryCount: this.settings.repositoryCount(),
+      branchLabel: this.filter.branch ? shortRefName(this.filter.branch) : 'All branches',
+      branchFiltered: !!this.filter.branch,
+      showRemotes: this.filter.showRemotes,
+    };
+    this.sink?.post({ type: 'toolbar', toolbar });
   }
 
   detach(sink: GraphSink): void {
@@ -91,6 +123,8 @@ export class GraphController {
     this.layout = new LaneLayout();
 
     const repository = this.repository;
+    this.filter = repository ? this.settings.filter(repository) : { showRemotes: true };
+    this.postToolbar();
     if (!repository) {
       this.status = this.discovering ? { kind: 'searching' } : { kind: 'noRepository' };
       this.postReset();
@@ -102,7 +136,16 @@ export class GraphController {
     try {
       const signal = controller.signal;
       const [refs, head] = await Promise.all([repository.getRefs({ signal }), repository.getHead({ signal })]);
-      this.tips = selectTips(refs, head.commit, { showRemotes: true });
+      if (generation !== this.generation) {
+        return;
+      }
+      const branch = this.filter.branch;
+      if (branch && !refs.some((ref) => ref.fullName === branch)) {
+        // The filtered branch was deleted or renamed: show everything.
+        this.filter = { showRemotes: this.filter.showRemotes };
+        this.postToolbar();
+      }
+      this.tips = selectTips(refs, head.commit, this.filter);
       this.badges = refsByCommit(refs);
       this.headCommit = head.commit;
       const page = await this.fetchPage(repository, 0, signal);

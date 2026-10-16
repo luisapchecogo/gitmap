@@ -1,9 +1,17 @@
 import * as vscode from 'vscode';
-import { HostMessage, WebviewMessage } from '../shared/protocol';
+import { HostMessage, ToolbarCommand, WebviewMessage } from '../shared/protocol';
 import { GraphController, GraphSink } from './graphController';
 import { renderGraphHtml } from './html';
 
 export const GRAPH_VIEW_ID = 'gitmap.graph';
+
+/** Commands the webview may run; anything else it sends is ignored. */
+const TOOLBAR_COMMANDS: ReadonlySet<ToolbarCommand> = new Set<ToolbarCommand>([
+  'selectRepository',
+  'selectBranch',
+  'toggleRemoteBranches',
+  'refresh',
+]);
 
 /**
  * Hosts the graph webview in the GitMap side bar. All state lives in the
@@ -55,6 +63,11 @@ export class GraphViewProvider implements vscode.WebviewViewProvider {
         break;
       case 'loadMore':
         void this.controller.loadMore(message.generation);
+        break;
+      case 'command':
+        if (TOOLBAR_COMMANDS.has(message.command)) {
+          void vscode.commands.executeCommand(`gitmap.${message.command}`);
+        }
         break;
     }
   }

@@ -6,6 +6,7 @@ import { CompareService } from './compare/compareService';
 import { CompareState } from './compare/compareState';
 import { GitFileSystemProvider } from './compare/gitFileSystemProvider';
 import { GIT_SCHEME } from './compare/gitUri';
+import { registerGraphCommands } from './graph/graphCommands';
 import { GraphController } from './graph/graphController';
 import { GRAPH_VIEW_ID, GraphViewProvider } from './graph/graphViewProvider';
 import { CommitOrder } from './git/repository';
@@ -54,6 +55,11 @@ export function activate(context: vscode.ExtensionContext): GitMapTestApi {
   const graph = new GraphController({
     pageSize: () => vscode.workspace.getConfiguration('gitmap').get<number>('graph.pageSize', 300),
     commitOrder: () => vscode.workspace.getConfiguration('gitmap').get<CommitOrder>('graph.commitOrder', 'date'),
+    filter: (repository) => {
+      const saved = store.get(repository.root);
+      return { branch: saved.graphBranch, showRemotes: saved.showRemotes ?? true };
+    },
+    repositoryCount: () => session.repositories.length,
   });
   let discovering = true;
   const showActiveRepository = (): Promise<void> => graph.setRepository(session.activeRepository, discovering);
@@ -64,6 +70,8 @@ export function activate(context: vscode.ExtensionContext): GitMapTestApi {
   context.subscriptions.push(
     { dispose: () => graph.dispose() },
     session.onDidChangeActiveRepository(() => void showActiveRepository()),
+    session.onDidChangeRepositories(() => graph.postToolbar()),
+    ...registerGraphCommands(session, store, graph),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration('gitmap.graph')) {
         void graph.reload();

@@ -1,14 +1,16 @@
 import * as assert from 'assert';
 import { GitRunner } from '../../core/gitRunner';
-import { GraphController } from '../../graph/graphController';
+import { GraphController, GraphSettings } from '../../graph/graphController';
+import { GraphFilter } from '../../core/refsParser';
 import { GitRepository } from '../../git/repository';
+import { HostMessage } from '../../shared/protocol';
 import { RecordingSink } from '../helpers/sink';
 import { TempRepo } from '../helpers/tempRepo';
 
 suite('GraphController', () => {
   let repo: TempRepo;
   let git: GitRepository;
-  const settings = { pageSize: () => 3, commitOrder: () => 'date' as const };
+  const settings = makeSettings(3);
 
   suiteSetup(async () => {
     repo = await TempRepo.create();
@@ -67,7 +69,10 @@ suite('GraphController', () => {
     await controller.loadMore(controller.currentGeneration);
     const sink = new RecordingSink();
     controller.attach(sink);
-    assert.strictEqual(sink.messages.length, 1);
+    assert.deepStrictEqual(
+      sink.messages.map((m) => m.type),
+      ['toolbar', 'reset'],
+    );
     assert.strictEqual(sink.lastReset()?.rows.length, 6);
     controller.dispose();
   });
@@ -87,11 +92,13 @@ suite('GraphController', () => {
     await controller.loadMore(stale);
     assert.ok(!sink.messages.some((m) => m.type === 'append'), 'stale page requests are ignored');
 
-    const lastReady = sink.messages.filter((m) => m.type === 'reset' && m.status.kind === 'ready').pop();
+    const lastReady = sink.messages
+      .filter((m): m is Extract<HostMessage, { type: 'reset' }> => m.type === 'reset' && m.status.kind === 'ready')
+      .pop();
     assert.strictEqual(lastReady?.generation, current);
-    const afterIndex = sink.messages.indexOf(lastReady);
+    const afterIndex = lastReady ? sink.messages.indexOf(lastReady) : -1;
     assert.ok(
-      sink.messages.slice(afterIndex).every((m) => m.generation === current),
+      sink.messages.slice(afterIndex).every((m) => m.type === 'toolbar' || m.generation === current),
       'nothing from an older load arrives after the newest one',
     );
     assert.ok(
@@ -115,9 +122,9 @@ suite('GraphController', () => {
       await branchy.git('merge', '--quiet', '--no-ff', '-m', 'merge one', 'one');
       const repository = new GitRepository(branchy.root, new GitRunner({ env: branchy.env }));
 
-      const whole = new GraphController({ pageSize: () => 100, commitOrder: () => 'date' });
+      const whole = new GraphController(makeSettings(100));
       await whole.setRepository(repository);
-      const paged = new GraphController({ pageSize: () => 2, commitOrder: () => 'date' });
+      const paged = new GraphController(makeSettings(2));
       await paged.setRepository(repository);
       while (paged.loadedRows.length < whole.loadedRows.length) {
         const before = paged.loadedRows.length;
@@ -134,6 +141,55 @@ suite('GraphController', () => {
       paged.dispose();
     } finally {
       await branchy.dispose();
+    }
+  });
+
+  test('applies the saved branch and remote filters', async () => {
+    const filtered = await TempRepo.create();
+    try {
+      await filtered.commitFiles('base', { 'a.txt': '0\n' });
+      await filtered.git('switch', '--quiet', '-c', 'topic');
+      await filtered.commitFiles('topic work', { 't.txt': '1\n' });
+      await filtered.git('switch', '--quiet', 'main');
+      await filtered.commitFiles('main work', { 'a.txt': '1\n' });
+      await filtered.git('update-ref', 'refs/remotes/origin/topic', 'topic~1');
+      await filtered.git('switch', '--quiet', '-c', 'remote-only');
+      await filtered.commitFiles('remote work', { 'r.txt': '1\n' });
+      await filtered.git('switch', '--quiet', 'main');
+      await filtered.git('update-ref', 'refs/remotes/origin/feature', 'remote-only');
+      await filtered.git('branch', '-D', 'remote-only');
+      const repository = new GitRepository(filtered.root, new GitRunner({ env: filtered.env }));
+      const subjects = (controller: GraphController) => controller.loadedRows.map((r) => r.subject).sort();
+
+      const all = new GraphController(makeSettings(50));
+      await all.setRepository(repository);
+      assert.deepStrictEqual(subjects(all), ['base', 'main work', 'remote work', 'topic work']);
+
+      const noRemotes = new GraphController(makeSettings(50, { showRemotes: false }));
+      await noRemotes.setRepository(repository);
+      assert.deepStrictEqual(subjects(noRemotes), ['base', 'main work', 'topic work']);
+
+      const sink = new RecordingSink();
+      const topic = new GraphController(makeSettings(50, { branch: 'refs/heads/topic', showRemotes: true }));
+      topic.attach(sink);
+      await topic.setRepository(repository);
+      assert.deepStrictEqual(subjects(topic), ['base', 'topic work']);
+      const toolbar = sink.messages.filter((m) => m.type === 'toolbar').pop();
+      assert.deepStrictEqual(toolbar?.type === 'toolbar' && [toolbar.toolbar.branchLabel, toolbar.toolbar.branchFiltered], [
+        'topic',
+        true,
+      ]);
+
+      const deleted = new GraphController(makeSettings(50, { branch: 'refs/heads/gone', showRemotes: true }));
+      await deleted.setRepository(repository);
+      assert.deepStrictEqual(subjects(deleted), subjects(all), 'a deleted branch falls back to all branches');
+      assert.strictEqual(deleted.currentFilter.branch, undefined);
+
+      for (const controller of [all, noRemotes, topic, deleted]) {
+        controller.dispose();
+      }
+    } finally {
+      await filtered.dispose();
     }
   });
 
@@ -166,3 +222,12 @@ suite('GraphController', () => {
     controller.dispose();
   });
 });
+
+function makeSettings(pageSize: number, filter: GraphFilter = { showRemotes: true }): GraphSettings {
+  return {
+    pageSize: () => pageSize,
+    commitOrder: () => 'date',
+    filter: () => filter,
+    repositoryCount: () => 1,
+  };
+}

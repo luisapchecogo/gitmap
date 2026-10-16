@@ -134,6 +134,30 @@
         "command": "gitmap.showMoreFiles",
         "title": "Show More Changed Files",
         "category": "GitMap"
+      },
+      {
+        "command": "gitmap.refresh",
+        "title": "Refresh Graph",
+        "category": "GitMap",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "gitmap.selectRepository",
+        "title": "Select Repository…",
+        "category": "GitMap",
+        "icon": "$(repo)"
+      },
+      {
+        "command": "gitmap.selectBranch",
+        "title": "Show Branch in Graph…",
+        "category": "GitMap",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "gitmap.toggleRemoteBranches",
+        "title": "Toggle Remote Branches in Graph",
+        "category": "GitMap",
+        "icon": "$(cloud)"
       }
     ],
     "menus": {

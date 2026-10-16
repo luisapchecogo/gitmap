@@ -36,8 +36,23 @@ export type GraphStatus =
   | { kind: 'ready' }
   | { kind: 'error'; message: string };
 
+/** What the toolbar shows. */
+export interface ToolbarState {
+  repositoryName: string | undefined;
+  repositoryCount: number;
+  /** "All branches" or the filtered branch's short name. */
+  branchLabel: string;
+  /** True when one branch is selected (the remotes toggle does not apply). */
+  branchFiltered: boolean;
+  showRemotes: boolean;
+}
+
+/** Toolbar buttons; each runs the GitMap command of the same name. */
+export type ToolbarCommand = 'selectRepository' | 'selectBranch' | 'toggleRemoteBranches' | 'refresh';
+
 /** Host → webview. */
 export type HostMessage =
+  | { type: 'toolbar'; toolbar: ToolbarState }
   | {
       type: 'reset';
       /** Increments on every (re)load; replies about older loads are ignored. */
@@ -52,4 +67,7 @@ export type HostMessage =
   | { type: 'total'; generation: number; total: number };
 
 /** Webview → host. */
-export type WebviewMessage = { type: 'ready' } | { type: 'loadMore'; generation: number };
+export type WebviewMessage =
+  | { type: 'ready' }
+  | { type: 'loadMore'; generation: number }
+  | { type: 'command'; command: ToolbarCommand };

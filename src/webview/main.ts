@@ -5,6 +5,7 @@ import { formatCount } from '../shared/format';
 import { GraphStatus, HostMessage, WebviewMessage } from '../shared/protocol';
 import { CommitList } from './commitList';
 import { h, icon } from './dom';
+import { Toolbar } from './toolbar';
 
 const vscode = acquireVsCodeApi();
 const post = (message: WebviewMessage): void => vscode.postMessage(message);
@@ -16,11 +17,12 @@ let total: number | undefined;
 let status: GraphStatus = { kind: 'searching' };
 
 const app = document.getElementById('app') as HTMLElement;
+const toolbar = new Toolbar((command) => post({ type: 'command', command }));
 const statusLine = h('div', 'status');
 statusLine.setAttribute('aria-live', 'polite');
 const placeholder = h('div', 'placeholder');
 const list = new CommitList(() => post({ type: 'loadMore', generation }));
-app.append(statusLine, placeholder, list.element);
+app.append(toolbar.element, statusLine, placeholder, list.element);
 
 function renderStatus(): void {
   placeholder.replaceChildren();
@@ -65,6 +67,9 @@ function renderStatus(): void {
 window.addEventListener('message', (event: MessageEvent<HostMessage>) => {
   const message = event.data;
   switch (message.type) {
+    case 'toolbar':
+      toolbar.update(message.toolbar);
+      break;
     case 'reset':
       generation = message.generation;
       status = message.status;
