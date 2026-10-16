@@ -4,6 +4,38 @@ A VS Code extension (also for VS Code–based editors such as Cursor, Windsurf a
 
 > Status: 0.1, the first usable version. Feedback and issues are welcome.
 
+## Install
+
+GitMap is not on the Visual Studio Marketplace yet, so you install it from a `.vsix` file. You need VS Code 1.90 or newer (or Cursor, Windsurf or VSCodium) and git.
+
+### Option 1: download a release (no build needed)
+
+1. Download the `gitmap-<version>.vsix` file from the [latest release](https://github.com/luisapchecogo/gitmap/releases/latest).
+2. In VS Code, open the Extensions view (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>, or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> on macOS), click the **…** menu at the top of the view, choose **Install from VSIX…** and pick the downloaded file.
+3. Click the new GitMap icon in the activity bar.
+
+Or install it from a terminal (use `cursor`, `windsurf` or `codium` instead of `code` for those editors):
+
+```sh
+code --install-extension ~/Downloads/gitmap-0.1.0.vsix
+```
+
+On macOS, if `code` is not found, run **Shell Command: Install 'code' command in PATH** from the Command Palette once.
+
+### Option 2: build it from source
+
+You need Node 24 or newer and git.
+
+```sh
+git clone https://github.com/luisapchecogo/gitmap.git
+cd gitmap
+npm install
+npm run vsix -- --out gitmap.vsix
+code --install-extension gitmap.vsix
+```
+
+To update, install a newer `.vsix` the same way. To remove GitMap, uninstall it from the Extensions view.
+
 ## Features
 
 - **Commit graph in the side bar.** Click the GitMap icon in the activity bar. The **Graph** view lists commits with branch lanes, the subject, branch/remote/tag badges, the author, a relative date and the short hash. Hover a row for the full message. History loads page by page as you scroll, and a counter shows "Showing 300 of 4,321 commits".
@@ -19,7 +51,7 @@ A VS Code extension (also for VS Code–based editors such as Cursor, Windsurf a
 
 ## Getting started
 
-1. Install GitMap and open a folder that contains a git repository.
+1. [Install GitMap](#install) and open a folder that contains a git repository.
 2. Click the GitMap icon in the activity bar.
 3. Press **Compare** right away to see your uncommitted work (Base = HEAD, Target = Working Tree), or pick other sides in the bar under the graph.
 4. Click files in **Changes** to review them.
@@ -59,8 +91,6 @@ npm install      # also enables the repo's git hooks (.githooks/)
 | Tests | `npm test` (runs `src/test/**/*.test.ts` inside a downloaded VS Code instance) |
 | Package `.vsix` | `npm run vsix` |
 | Secret scan | `npm run secrets` |
-
-Install a packaged build with `code --install-extension gitmap-<version>.vsix` (or the equivalent CLI of your editor).
 
 ## Project layout
 
