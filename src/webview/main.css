@@ -433,14 +433,19 @@ button:disabled {
   font-weight: 600;
 }
 
-/* Labels keep their width (up to a cap); the subject and the author line
-   give way first, since the tooltip repeats them. */
+/* Labels keep their width up to a cap, and the text beside them gives
+   way first (the row tooltip repeats it). The subject keeps at least
+   half of its line. */
 .refs {
   display: flex;
   flex: none;
   gap: 3px;
   max-width: 60%;
   overflow: hidden;
+}
+
+.line1 .refs {
+  max-width: 50%;
 }
 
 /* Ref labels are tinted with their commit's lane color, so they read as
@@ -450,8 +455,9 @@ button:disabled {
   flex: 0 1 auto;
   align-items: center;
   box-sizing: border-box;
-  min-width: 0;
-  max-width: 160px;
+  /* Never narrower than the icon. */
+  min-width: 25px;
+  overflow: hidden;
   height: 16px;
   padding: 0 6px 0 4px;
   border: 1px solid color-mix(in srgb, var(--lane) 50%, transparent);
@@ -461,6 +467,18 @@ button:disabled {
   font-size: 11px;
   line-height: 14px;
   white-space: nowrap;
+}
+
+/* Short of room, the first label keeps its name (shortened only if it
+   alone is too long) and the second shrinks, down to just its icon; its
+   tooltip still names it. 56px keeps room for that icon and a "+N". */
+.ref:first-child {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.ref:first-child:not(:last-child) {
+  max-width: calc(100% - 56px);
 }
 
 .ref .codicon {
@@ -504,6 +522,7 @@ button:disabled {
 
 .ref.more {
   flex: none;
+  min-width: 0;
   padding: 0 5px;
   border-color: color-mix(in srgb, var(--vscode-descriptionForeground) 45%, transparent);
   color: var(--vscode-descriptionForeground);
