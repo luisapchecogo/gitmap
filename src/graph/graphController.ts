@@ -325,7 +325,12 @@ export class GraphController {
       authorEmail: commit.authorEmail,
       authorDate: commit.authorDate,
       parents: commit.parents,
-      refs: (this.badges.get(commit.hash) ?? []).map((ref) => ({ name: ref.name, kind: ref.kind, current: ref.isHead })),
+      refs: (this.badges.get(commit.hash) ?? []).map((ref) => ({
+        name: ref.name,
+        kind: ref.kind,
+        current: ref.isHead,
+        ...(ref.remote ? { remote: ref.remote } : {}),
+      })),
       head: commit.hash === this.headCommit,
       graph: { column: lane.column, color: lane.color, width: lane.width, edges: lane.edges },
     };
