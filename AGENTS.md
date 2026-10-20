@@ -20,7 +20,7 @@ The extension host owns all state; the graph webview only renders it.
 | `src/compare/` | Changes tree, `CompareState`/`CompareService`, the read-only `gitmap:` file system, decorations, diff commands. |
 | `src/graph/` | `GraphController` (rows, paging, generations, search, reveal; no webview dependency), the webview view provider, HTML/CSP, the compare footer, auto refresh, row commands. |
 | `src/webview/` | Browser code for the graph (own `tsconfig.json`, DOM lib), bundled to `dist/webview/`. |
-| `src/shared/` | Code for both sides (message protocol, SVG geometry, formatting): no Node or `vscode` imports. |
+| `src/shared/` | Code for both sides (message protocol, SVG geometry, ref label layout, formatting): no Node or `vscode` imports. |
 
 Invariants to keep:
 
