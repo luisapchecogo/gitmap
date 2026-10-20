@@ -342,8 +342,8 @@ button:disabled {
 
 .graph {
   flex: none;
-  width: var(--graph-width, 16px);
-  max-width: 40%;
+  width: var(--graph-width, 14px);
+  max-width: 33%;
   height: var(--row-height);
   overflow: hidden;
 }
@@ -378,22 +378,22 @@ button:disabled {
 .lane {
   fill: none;
   stroke: var(--lane);
-  stroke-width: 2;
+  stroke-width: 1.5;
 }
 
 .node {
   fill: var(--lane);
-  stroke: var(--lane);
-  stroke-width: 2;
 }
 
-.node.merge,
-.node.head {
+/* Merges and HEAD: hollow, so they stand out from ordinary commits. */
+.node.ring {
   fill: var(--vscode-sideBar-background);
+  stroke: var(--lane);
+  stroke-width: 1.5;
 }
 
 .node.head {
-  stroke-width: 2.5;
+  stroke-width: 2;
 }
 
 .text {
