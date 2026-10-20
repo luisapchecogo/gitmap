@@ -38,7 +38,8 @@ To update, install a newer `.vsix` the same way. To remove GitMap, uninstall it 
 
 ## Features
 
-- **Commit graph in the side bar.** Click the GitMap icon in the activity bar. The **Graph** view lists commits with branch lanes, the subject, branch/remote/tag badges, the author, a relative date and the short hash. Hover a row for the full message. History loads page by page as you scroll, and a counter shows "Showing 300 of 4,321 commits".
+- **Commit graph in the side bar.** Click the GitMap icon in the activity bar. The **Graph** view lists commits with color-coded branch lanes, the subject, the author, a relative date and the short hash. Hover a row for the full message. History loads page by page as you scroll, and a counter shows "Showing 300 of 4,321 commits".
+- **Branch and tag labels.** Each commit's refs appear as pills tinted with its lane color. Local branches and tags sit next to the subject, with the checked-out branch marked by a check; remote branches sit on the line below. When a remote has the same branch at the same commit (it is pushed), the line below shows just the remote's name (`origin`) under the local branch. If labels don't fit, extra ones collapse into an icon or a "+N" chip, and hovering any label shows full names.
 - **Filters.** Pick the repository (in multi-root workspaces), show all branches or a single branch, and show or hide remote branches. The graph refreshes by itself when branches or HEAD move.
 - **Search.** Search by message, author or hash (full or short). <kbd>Enter</kbd> and <kbd>Shift</kbd>+<kbd>Enter</kbd> step through matches, and history loads further if a match is deeper down.
 - **Base ⇄ Target comparison.** The bar under the graph picks a **Base** and a **Target**, which can be a branch, tag, commit, any revision, or the **Working Tree** (target only). Choose either direction, swap the sides, and press **Compare**.
@@ -65,6 +66,16 @@ You can also run **GitMap: Compare Revisions…** from the Command Palette.
 | `gitmap.graph.pageSize` | `300` | Commits loaded per page in the Graph view. |
 | `gitmap.graph.commitOrder` | `date` | `date` (newest first) or `topo` (keep each branch's commits together; slower on big repositories). |
 | `gitmap.compare.maxFiles` | `1000` | Files shown at a time in the Changes view; also the limit above which line counts are skipped. |
+
+## Colors
+
+The graph's eight lane colors (blue, orange, teal, pink, green, violet, amber and coral by default, in lighter tones for dark themes and deeper ones for light themes) are theme colors, `gitmap.graphLane1` to `gitmap.graphLane8`. Lanes cycle through them, and ref labels take the color of their commit's lane. To change one, add it to your `settings.json`:
+
+```json
+"workbench.colorCustomizations": {
+  "gitmap.graphLane1": "#4f9dff"
+}
+```
 
 ## Requirements and limitations
 

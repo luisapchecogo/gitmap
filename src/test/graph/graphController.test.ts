@@ -164,6 +164,9 @@ suite('GraphController', () => {
       const all = new GraphController(makeSettings(50));
       await all.setRepository(repository);
       assert.deepStrictEqual(subjects(all), ['base', 'main work', 'remote work', 'topic work']);
+      assert.deepStrictEqual(all.loadedRows.find((r) => r.subject === 'base')?.refs, [
+        { name: 'origin/topic', kind: 'remote', current: false, remote: 'origin' },
+      ]);
 
       const noRemotes = new GraphController(makeSettings(50, { showRemotes: false }));
       await noRemotes.setRepository(repository);

@@ -8,6 +8,8 @@ export interface RefBadge {
   kind: 'head' | 'remote' | 'tag';
   /** The checked-out branch. */
   current: boolean;
+  /** Remote name (`origin`), for remote-tracking branches. */
+  remote?: string;
 }
 
 export interface CommitRow {

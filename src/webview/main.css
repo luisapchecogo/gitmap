@@ -342,8 +342,8 @@ button:disabled {
 
 .graph {
   flex: none;
-  width: var(--graph-width, 16px);
-  max-width: 40%;
+  width: var(--graph-width, 14px);
+  max-width: 33%;
   height: var(--row-height);
   overflow: hidden;
 }
@@ -353,47 +353,59 @@ button:disabled {
   overflow: visible;
 }
 
-/* Lane colors: the theme's SCM graph colors where defined (VS Code 1.93+),
-   with the same defaults otherwise. */
+/* Lane colors are contributed theme colors (gitmap.graphLane1-8 in
+   package.json), with separate dark and light palettes. */
 .c0 {
-  --lane: var(--vscode-scmGraph-foreground1, #ffb000);
+  --lane: var(--vscode-gitmap-graphLane1);
 }
 
 .c1 {
-  --lane: var(--vscode-scmGraph-foreground2, #dc267f);
+  --lane: var(--vscode-gitmap-graphLane2);
 }
 
 .c2 {
-  --lane: var(--vscode-scmGraph-foreground3, #994f00);
+  --lane: var(--vscode-gitmap-graphLane3);
 }
 
 .c3 {
-  --lane: var(--vscode-scmGraph-foreground4, #40b0a6);
+  --lane: var(--vscode-gitmap-graphLane4);
 }
 
 .c4 {
-  --lane: var(--vscode-scmGraph-foreground5, #b66dff);
+  --lane: var(--vscode-gitmap-graphLane5);
+}
+
+.c5 {
+  --lane: var(--vscode-gitmap-graphLane6);
+}
+
+.c6 {
+  --lane: var(--vscode-gitmap-graphLane7);
+}
+
+.c7 {
+  --lane: var(--vscode-gitmap-graphLane8);
 }
 
 .lane {
   fill: none;
   stroke: var(--lane);
-  stroke-width: 2;
+  stroke-width: 1.5;
 }
 
 .node {
   fill: var(--lane);
-  stroke: var(--lane);
-  stroke-width: 2;
 }
 
-.node.merge,
-.node.head {
+/* Merges and HEAD: hollow, so they stand out from ordinary commits. */
+.node.ring {
   fill: var(--vscode-sideBar-background);
+  stroke: var(--lane);
+  stroke-width: 1.5;
 }
 
 .node.head {
-  stroke-width: 2.5;
+  stroke-width: 2;
 }
 
 .text {
@@ -421,53 +433,117 @@ button:disabled {
   font-weight: 600;
 }
 
+/* Labels keep their width up to a cap, and the text beside them gives
+   way first (the row tooltip repeats it). The subject keeps at least
+   half of its line. */
 .refs {
   display: flex;
-  flex: 0 1 auto;
+  flex: none;
   gap: 3px;
-  min-width: 0;
-  max-width: 55%;
+  max-width: 60%;
   overflow: hidden;
 }
 
-.badge {
+.line1 .refs {
+  max-width: 50%;
+}
+
+/* Ref labels are tinted with their commit's lane color, so they read as
+   part of the branch the graph draws. */
+.ref {
+  display: flex;
   flex: 0 1 auto;
-  min-width: 24px;
-  max-width: 140px;
-  padding: 0 4px;
-  border: 1px solid currentColor;
-  border-radius: 3px;
-  font-size: 10px;
+  align-items: center;
+  box-sizing: border-box;
+  /* Never narrower than the icon. */
+  min-width: 25px;
+  overflow: hidden;
+  height: 16px;
+  padding: 0 6px 0 4px;
+  border: 1px solid color-mix(in srgb, var(--lane) 50%, transparent);
+  border-radius: 8px;
+  color: var(--vscode-foreground);
+  background: color-mix(in srgb, var(--lane) 16%, transparent);
+  font-size: 11px;
   line-height: 14px;
   white-space: nowrap;
+}
+
+/* Short of room, the first label keeps its name (shortened only if it
+   alone is too long) and the second shrinks, down to just its icon; its
+   tooltip still names it. 56px keeps room for that icon and a "+N". */
+.ref:first-child {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.ref:first-child:not(:last-child) {
+  max-width: calc(100% - 56px);
+}
+
+.ref .codicon {
+  flex: none;
+  margin-right: 3px;
+  font-size: 12px;
+  color: var(--lane);
+}
+
+.ref .prefix {
+  flex: none;
+  opacity: 0.7;
+}
+
+.ref .name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.badge.head {
-  color: var(--vscode-charts-blue, #3794ff);
+.ref.current {
+  border-color: var(--lane);
+  background: color-mix(in srgb, var(--lane) 30%, transparent);
+  font-weight: 600;
 }
 
-.badge.remote {
-  color: var(--vscode-charts-purple, #b180d7);
+/* Remote branches are copies of someone else's branch: outlined only. */
+.ref.remote {
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
 }
 
-.badge.tag {
-  color: var(--vscode-charts-yellow, #cca700);
+.ref.tag {
+  border-color: color-mix(in srgb, var(--vscode-descriptionForeground) 50%, transparent);
+  background: color-mix(in srgb, var(--vscode-descriptionForeground) 14%, transparent);
 }
 
-.badge.current {
-  font-weight: 700;
+.ref.tag .codicon {
+  color: var(--vscode-descriptionForeground);
+}
+
+.ref.more {
+  flex: none;
+  min-width: 0;
+  padding: 0 5px;
+  border-color: color-mix(in srgb, var(--vscode-descriptionForeground) 45%, transparent);
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
 }
 
 .line2 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   height: calc(var(--row-height) - var(--line1-height));
   font-size: 11px;
-  line-height: 14px;
   color: var(--vscode-descriptionForeground);
-  white-space: nowrap;
+}
+
+.meta {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hash {

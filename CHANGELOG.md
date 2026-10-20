@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Ref labels** are pills with icons, tinted with the commit's lane color. Local branches and tags sit next to the subject, with a check on the checked-out branch. Remote branches sit on the author line, and a pushed branch's remote shows as just `origin` under it. Crowded labels collapse to an icon or a "+N" chip, and every label's tooltip has its full name.
+- **Graph**: narrower lanes (10px instead of 12), thinner lines and smaller commit dots, with HEAD as the larger ring. The graph column takes at most a third of the view.
+- **Lane colors**: a new eight-color palette, with separate dark and light variants, replaces VS Code's five Source Control Graph colors. Themes and users can override it through `gitmap.graphLane1` to `gitmap.graphLane8`.
+
 ## [0.1.0] - 2026-10-16
 
 First usable version.
