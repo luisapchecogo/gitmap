@@ -353,26 +353,38 @@ button:disabled {
   overflow: visible;
 }
 
-/* Lane colors: the theme's SCM graph colors where defined (VS Code 1.93+),
-   with the same defaults otherwise. */
+/* Lane colors are contributed theme colors (gitmap.graphLane1-8 in
+   package.json), with separate dark and light palettes. */
 .c0 {
-  --lane: var(--vscode-scmGraph-foreground1, #ffb000);
+  --lane: var(--vscode-gitmap-graphLane1);
 }
 
 .c1 {
-  --lane: var(--vscode-scmGraph-foreground2, #dc267f);
+  --lane: var(--vscode-gitmap-graphLane2);
 }
 
 .c2 {
-  --lane: var(--vscode-scmGraph-foreground3, #994f00);
+  --lane: var(--vscode-gitmap-graphLane3);
 }
 
 .c3 {
-  --lane: var(--vscode-scmGraph-foreground4, #40b0a6);
+  --lane: var(--vscode-gitmap-graphLane4);
 }
 
 .c4 {
-  --lane: var(--vscode-scmGraph-foreground5, #b66dff);
+  --lane: var(--vscode-gitmap-graphLane5);
+}
+
+.c5 {
+  --lane: var(--vscode-gitmap-graphLane6);
+}
+
+.c6 {
+  --lane: var(--vscode-gitmap-graphLane7);
+}
+
+.c7 {
+  --lane: var(--vscode-gitmap-graphLane8);
 }
 
 .lane {

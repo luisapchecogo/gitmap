@@ -303,6 +303,86 @@
     },
     "colors": [
       {
+        "id": "gitmap.graphLane1",
+        "description": "Color of the first lane in the GitMap graph (default: blue), also used to tint the lane's ref labels. Lanes cycle through the eight colors.",
+        "defaults": {
+          "dark": "#7AB4FE",
+          "light": "#2474CF",
+          "highContrast": "#7AB4FE",
+          "highContrastLight": "#2474CF"
+        }
+      },
+      {
+        "id": "gitmap.graphLane2",
+        "description": "Color of the second lane in the GitMap graph (default: orange), also used to tint the lane's ref labels. Lanes cycle through the eight colors.",
+        "defaults": {
+          "dark": "#F49752",
+          "light": "#B05A02",
+          "highContrast": "#F49752",
+          "highContrastLight": "#B05A02"
+        }
+      },
+      {
+        "id": "gitmap.graphLane3",
+        "description": "Color of the third lane in the GitMap graph (default: teal), also used to tint the lane's ref labels. Lanes cycle through the eight colors.",
+        "defaults": {
+          "dark": "#0DCBC3",
+          "light": "#048681",
+          "highContrast": "#0DCBC3",
+          "highContrastLight": "#048681"
+        }
+      },
+      {
+        "id": "gitmap.graphLane4",
+        "description": "Color of the fourth lane in the GitMap graph (default: pink), also used to tint the lane's ref labels. Lanes cycle through the eight colors.",
+        "defaults": {
+          "dark": "#EF8BC5",
+          "light": "#B2468A",
+          "highContrast": "#EF8BC5",
+          "highContrastLight": "#B2468A"
+        }
+      },
+      {
+        "id": "gitmap.graphLane5",
+        "description": "Color of the fifth lane in the GitMap graph (default: green), also used to tint the lane's ref labels. Lanes cycle through the eight colors.",
+        "defaults": {
+          "dark": "#74C878",
+          "light": "#218B30",
+          "highContrast": "#74C878",
+          "highContrastLight": "#218B30"
+        }
+      },
+      {
+        "id": "gitmap.graphLane6",
+        "description": "Color of the sixth lane in the GitMap graph (default: violet), also used to tint the lane's ref labels. Lanes cycle through the eight colors.",
+        "defaults": {
+          "dark": "#BF9BFC",
+          "light": "#8459C3",
+          "highContrast": "#BF9BFC",
+          "highContrastLight": "#8459C3"
+        }
+      },
+      {
+        "id": "gitmap.graphLane7",
+        "description": "Color of the seventh lane in the GitMap graph (default: amber), also used to tint the lane's ref labels. Lanes cycle through the eight colors.",
+        "defaults": {
+          "dark": "#DAA932",
+          "light": "#936E03",
+          "highContrast": "#DAA932",
+          "highContrastLight": "#936E03"
+        }
+      },
+      {
+        "id": "gitmap.graphLane8",
+        "description": "Color of the eighth lane in the GitMap graph (default: coral), also used to tint the lane's ref labels. Lanes cycle through the eight colors.",
+        "defaults": {
+          "dark": "#FE8A88",
+          "light": "#C04448",
+          "highContrast": "#FE8A88",
+          "highContrastLight": "#C04448"
+        }
+      },
+      {
         "id": "gitmap.addedResourceForeground",
         "description": "Color of added files in the GitMap Changes view.",
         "defaults": {

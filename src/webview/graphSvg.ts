@@ -11,8 +11,8 @@ export const GRAPH_METRICS = { laneWidth: 10, rowHeight: 40, nodeY: 11 };
  */
 const NODE_RADIUS = { commit: 3, merge: 2.75, head: 3.5 };
 
-/** Number of lane colors in main.css (.c0 … .c4). */
-const PALETTE_SIZE = 5;
+/** Number of lane colors (gitmap.graphLane1-8 in package.json, .c0 … .c7 in main.css). */
+const PALETTE_SIZE = 8;
 
 function svgElement<K extends keyof SVGElementTagNameMap>(tag: K, attributes: Record<string, string | number>): SVGElementTagNameMap[K] {
   const element = document.createElementNS(SVG, tag);
