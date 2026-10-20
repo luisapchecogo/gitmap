@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-20
+
+A visual refresh of the Graph view.
+
 ### Changed
 
 - **Ref labels** are pills with icons, tinted with the commit's lane color. Local branches and tags sit next to the subject, with a check on the checked-out branch. Remote branches sit on the author line, and a pushed branch's remote shows as just `origin` under it. Crowded labels collapse to an icon or a "+N" chip, and every label's tooltip has its full name.
