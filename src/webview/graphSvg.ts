@@ -16,7 +16,8 @@ function svgElement<K extends keyof SVGElementTagNameMap>(tag: K, attributes: Re
   return element;
 }
 
-const colorClass = (color: number): string => `c${color % PALETTE_SIZE}`;
+/** The CSS class that sets `--lane` to a lane color. */
+export const colorClass = (color: number): string => `c${color % PALETTE_SIZE}`;
 
 /**
  * Draws one row of the branch graph: lane segments plus the commit's node

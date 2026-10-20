@@ -1,7 +1,35 @@
 import { relativeDate } from '../shared/format';
 import { CommitRow } from '../shared/protocol';
-import { h } from './dom';
-import { GRAPH_METRICS, renderGraphRow } from './graphSvg';
+import { RefLabel, refLines } from '../shared/refLabels';
+import { h, icon } from './dom';
+import { GRAPH_METRICS, colorClass, renderGraphRow } from './graphSvg';
+
+/** Labels shown per line before the rest collapse into a "+N" chip. */
+const MAX_LABELS = 2;
+
+const LABEL_ICONS: Record<RefLabel['kind'], string> = { branch: 'git-branch', remote: 'cloud', tag: 'tag' };
+
+/** A line's ref labels, in the commit's lane color. */
+function renderLabels(labels: readonly RefLabel[], color: number): HTMLElement {
+  const container = h('span', `refs ${colorClass(color)}`);
+  for (const label of labels.slice(0, MAX_LABELS)) {
+    const pill = h('span', `ref ${label.kind}${label.current ? ' current' : ''}`);
+    pill.title = label.current ? `${label.title} (checked out)` : label.title;
+    pill.append(icon(label.current ? 'check' : LABEL_ICONS[label.kind]));
+    if (label.prefix) {
+      pill.append(h('span', 'prefix', label.prefix));
+    }
+    pill.append(h('span', 'name', label.text));
+    container.append(pill);
+  }
+  const hidden = labels.slice(MAX_LABELS);
+  if (hidden.length > 0) {
+    const more = h('span', 'ref more', `+${hidden.length}`);
+    more.title = hidden.map((label) => label.title).join('\n');
+    container.append(more);
+  }
+  return container;
+}
 
 /** Builds the multi-line native tooltip for a commit row. */
 function tooltip(row: CommitRow): string {
@@ -238,20 +266,23 @@ export class CommitList {
     graph.append(renderGraphRow(row.graph, { merge: row.parents.length > 1, head: row.head }));
     const text = h('div', 'text');
 
+    // Local branches and tags next to the subject, remotes on the line below.
+    const labels = refLines(row.refs);
     const line1 = h('div', 'line1');
     line1.append(h('span', 'markers'), h('span', 'subject', row.subject));
-    if (row.refs.length > 0) {
-      const refs = h('span', 'refs');
-      for (const ref of row.refs) {
-        refs.append(h('span', `badge ${ref.kind}${ref.current ? ' current' : ''}`, ref.name));
-      }
-      line1.append(refs);
+    if (labels.top.length > 0) {
+      line1.append(renderLabels(labels.top, row.graph.color));
     }
 
     const line2 = h('div', 'line2');
+    const meta = h('span', 'meta');
     const date = h('span', 'date', relativeDate(row.authorDate));
     date.dataset.time = String(row.authorDate);
-    line2.append(h('span', 'author', row.authorName), h('span', 'sep', ' · '), date, h('span', 'sep', ' · '), h('span', 'hash', row.shortHash));
+    meta.append(h('span', 'author', row.authorName), h('span', 'sep', ' · '), date, h('span', 'sep', ' · '), h('span', 'hash', row.shortHash));
+    line2.append(meta);
+    if (labels.bottom.length > 0) {
+      line2.append(renderLabels(labels.bottom, row.graph.color));
+    }
 
     text.append(line1, line2);
     element.append(graph, text);
