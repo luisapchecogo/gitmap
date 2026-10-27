@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import { GitRunner } from '../../core/gitRunner';
+import { MAX_LINE_ROWS } from '../../core/graphLayout';
 import { GraphController, GraphSettings } from '../../graph/graphController';
 import { GraphFilter } from '../../core/refsParser';
 import { GitRepository } from '../../git/repository';
@@ -111,7 +112,7 @@ suite('GraphController', () => {
   test('sends the same lanes whether history arrives in pages or at once', async () => {
     const branchy = await TempRepo.create();
     try {
-      await branchy.commitFiles('base', { 'a.txt': '0\n' });
+      const base = await branchy.commitFiles('base', { 'a.txt': '0\n' });
       for (const name of ['one', 'two']) {
         await branchy.git('switch', '--quiet', '-c', name, 'main');
         await branchy.commitFiles(`${name} work`, { [`${name}.txt`]: '1\n' });
@@ -120,6 +121,13 @@ suite('GraphController', () => {
       await branchy.commitFiles('main work', { 'a.txt': '1\n' });
       branchy.tick();
       await branchy.git('merge', '--quiet', '--no-ff', '-m', 'merge one', 'one');
+      for (let i = 1; i <= MAX_LINE_ROWS; i++) {
+        await branchy.commitFiles(`main ${i}`, { 'a.txt': `main ${i}\n` });
+      }
+      // The newest commit, its parent more than a screen of rows below.
+      await branchy.git('switch', '--quiet', '-c', 'late', base);
+      await branchy.commitFiles('late work', { 'late.txt': '1\n' });
+      await branchy.git('switch', '--quiet', 'main');
       const repository = new GitRepository(branchy.root, new GitRunner({ env: branchy.env }));
 
       const whole = new GraphController(makeSettings(100));
@@ -137,6 +145,20 @@ suite('GraphController', () => {
       );
       const merge = whole.loadedRows.find((r) => r.subject === 'merge one');
       assert.strictEqual(merge?.graph.edges.filter((e) => e.kind === 'out').length, 2);
+      // late → base is cut into stubs; main, the checked-out line, is not.
+      const late = whole.loadedRows[0];
+      assert.strictEqual(late.subject, 'late work');
+      assert.deepStrictEqual(
+        late.graph.edges.filter((e) => e.kind === 'stubOut').map((e) => e.target),
+        [base],
+      );
+      const baseRow = whole.loadedRows.find((r) => r.hash === base);
+      assert.strictEqual(baseRow?.graph.edges.find((e) => e.kind === 'stubIn')?.target, late.hash);
+      const cut = whole.loadedRows.filter((r) => r.graph.edges.some((e) => e.kind === 'stubOut'));
+      assert.deepStrictEqual(
+        cut.map((r) => r.subject),
+        ['late work'],
+      );
       whole.dispose();
       paged.dispose();
     } finally {

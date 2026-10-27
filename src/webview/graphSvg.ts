@@ -3,7 +3,7 @@ import { RowShape, rowGeometry } from '../shared/graphGeometry';
 const SVG = 'http://www.w3.org/2000/svg';
 
 /** Lane spacing and row metrics; must match --row-height in main.css. */
-export const GRAPH_METRICS = { laneWidth: 10, rowHeight: 40, nodeY: 11 };
+export const GRAPH_METRICS = { laneWidth: 10, rowHeight: 40, nodeY: 11, stubLength: 24 };
 
 /**
  * Node radii, in px. Lanes are 1.5px wide (main.css), so a 6px dot is
@@ -25,9 +25,47 @@ function svgElement<K extends keyof SVGElementTagNameMap>(tag: K, attributes: Re
 /** The CSS class that sets `--lane` to a lane color. */
 export const colorClass = (color: number): string => `c${color % PALETTE_SIZE}`;
 
+const fadeId = (stub: 'in' | 'out', color: number): string => `gitmap-fade-${stub}-${color % PALETTE_SIZE}`;
+
 /**
- * Draws one row of the branch graph: lane segments plus the commit's node
- * (a dot, a ring for merges, a larger, thicker ring for HEAD).
+ * The gradients that fade stubs out toward their far end, one per lane
+ * color and direction. Rows reference them by id, so this must be in the
+ * document once. They use row coordinates, which every row shares.
+ */
+export function renderGraphDefs(): SVGSVGElement {
+  const { nodeY, stubLength } = GRAPH_METRICS;
+  const svg = svgElement('svg', { class: 'graph-defs', 'aria-hidden': 'true' });
+  const defs = svgElement('defs', {});
+  for (let color = 0; color < PALETTE_SIZE; color++) {
+    for (const [stub, y1, y2] of [
+      ['out', nodeY, nodeY + stubLength],
+      ['in', nodeY, 0],
+    ] as const) {
+      const gradient = svgElement('linearGradient', {
+        id: fadeId(stub, color),
+        class: colorClass(color),
+        gradientUnits: 'userSpaceOnUse',
+        x1: 0,
+        y1,
+        x2: 0,
+        y2,
+      });
+      // Solid for the first half, so even short stubs are easy to see.
+      gradient.append(
+        svgElement('stop', { offset: 0.5 }),
+        svgElement('stop', { offset: 1, 'stop-opacity': 0 }),
+      );
+      defs.append(gradient);
+    }
+  }
+  svg.append(defs);
+  return svg;
+}
+
+/**
+ * Draws one row of the branch graph: lane segments, stubs of cut edges
+ * (fading out), and the commit's node (a dot, a ring for merges, a larger,
+ * thicker ring for HEAD).
  */
 export function renderGraphRow(shape: RowShape, kind: { merge: boolean; head: boolean }): SVGSVGElement {
   const drawing = rowGeometry(shape, GRAPH_METRICS);
@@ -38,7 +76,11 @@ export function renderGraphRow(shape: RowShape, kind: { merge: boolean; head: bo
     'aria-hidden': 'true',
   });
   for (const path of drawing.paths) {
-    svg.append(svgElement('path', { d: path.d, class: `lane ${colorClass(path.color)}` }));
+    if (!path.stub) {
+      svg.append(svgElement('path', { d: path.d, class: `lane ${colorClass(path.color)}` }));
+      continue;
+    }
+    svg.append(svgElement('path', { d: path.d, class: `stub ${colorClass(path.color)}`, stroke: `url(#${fadeId(path.stub, path.color)})` }));
   }
   const { cx, cy, color } = drawing.node;
   const lane = colorClass(color);

@@ -2,7 +2,7 @@ import { relativeDate } from '../shared/format';
 import { CommitRow } from '../shared/protocol';
 import { RefLabel, refLines } from '../shared/refLabels';
 import { h, icon } from './dom';
-import { GRAPH_METRICS, colorClass, renderGraphRow } from './graphSvg';
+import { GRAPH_METRICS, colorClass, renderGraphDefs, renderGraphRow } from './graphSvg';
 
 /** Labels shown per line before the rest collapse into a "+N" chip. */
 const MAX_LABELS = 2;
@@ -101,7 +101,7 @@ export class CommitList {
     this.rowsElement = h('div', 'rows');
     this.rowsElement.setAttribute('role', 'list');
     this.sentinel = h('div', 'sentinel');
-    this.element.append(this.rowsElement, this.sentinel);
+    this.element.append(renderGraphDefs(), this.rowsElement, this.sentinel);
     this.observer = new IntersectionObserver((entries) => this.onIntersect(entries), {
       root: this.element,
       // Start loading well before the user reaches the end.
