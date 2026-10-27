@@ -394,7 +394,7 @@ button:disabled {
 }
 
 /* Cut edges: short stubs that fade toward the far end (gradients from
-   renderGraphDefs). */
+   renderGraphDefs), solid while hovered. */
 .graph-defs {
   position: absolute;
   width: 0;
@@ -408,6 +408,20 @@ button:disabled {
 .stub {
   fill: none;
   stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.stub-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 8;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.stub-hit:hover + .stub {
+  stroke: var(--lane);
+  stroke-width: 2;
 }
 
 .node {

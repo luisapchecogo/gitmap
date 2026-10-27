@@ -65,7 +65,8 @@ export function renderGraphDefs(): SVGSVGElement {
 /**
  * Draws one row of the branch graph: lane segments, stubs of cut edges
  * (fading out), and the commit's node (a dot, a ring for merges, a larger,
- * thicker ring for HEAD).
+ * thicker ring for HEAD). Each stub has a wider, invisible twin that is
+ * easy to click, carrying the commit at its far end (`data-target`).
  */
 export function renderGraphRow(shape: RowShape, kind: { merge: boolean; head: boolean }): SVGSVGElement {
   const drawing = rowGeometry(shape, GRAPH_METRICS);
@@ -79,6 +80,16 @@ export function renderGraphRow(shape: RowShape, kind: { merge: boolean; head: bo
     if (!path.stub) {
       svg.append(svgElement('path', { d: path.d, class: `lane ${colorClass(path.color)}` }));
       continue;
+    }
+    if (path.target) {
+      const hit = svgElement('path', { d: path.d, class: 'stub-hit', 'data-target': path.target });
+      const title = svgElement('title', {});
+      title.textContent =
+        path.stub === 'out'
+          ? `Continues down to ${path.target.slice(0, 7)}. Click to go there.`
+          : `Continues up to ${path.target.slice(0, 7)}. Click to go there.`;
+      hit.append(title);
+      svg.append(hit);
     }
     svg.append(svgElement('path', { d: path.d, class: `stub ${colorClass(path.color)}`, stroke: `url(#${fadeId(path.stub, path.color)})` }));
   }

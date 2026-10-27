@@ -30,6 +30,7 @@ const placeholder = h('div', 'placeholder');
 const list = new CommitList(
   () => post({ type: 'loadMore', generation }),
   (hash) => post({ type: 'openCommit', hash }),
+  (hash) => post({ type: 'reveal', hash }),
 );
 const footer = new Footer((action) => post({ type: 'footer', action }));
 app.append(toolbar.element, search.element, statusLine, placeholder, list.element, footer.element);

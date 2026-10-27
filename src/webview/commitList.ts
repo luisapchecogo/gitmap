@@ -74,11 +74,18 @@ export class CommitList {
   constructor(
     private readonly onLoadMore: () => void,
     private readonly onOpen: (hash: string) => void,
+    /** A stub of a cut edge was clicked: go to the commit at its other end. */
+    private readonly onJump: (hash: string) => void,
   ) {
     this.element = h('div', 'list');
     this.element.tabIndex = 0;
     this.element.setAttribute('aria-label', 'Commits');
     this.element.addEventListener('click', (event) => {
+      const target = this.stubTarget(event.target);
+      if (target) {
+        this.onJump(target);
+        return;
+      }
       const row = this.rowFrom(event.target);
       if (row) {
         this.select(row);
@@ -86,7 +93,7 @@ export class CommitList {
     });
     this.element.addEventListener('dblclick', (event) => {
       const row = this.rowFrom(event.target);
-      if (row?.dataset.hash) {
+      if (row?.dataset.hash && !this.stubTarget(event.target)) {
         this.onOpen(row.dataset.hash);
       }
     });
@@ -187,6 +194,10 @@ export class CommitList {
       this.requested = true;
       this.onLoadMore();
     }
+  }
+
+  private stubTarget(target: EventTarget | null): string | undefined {
+    return target instanceof Element ? (target.closest('.stub-hit')?.getAttribute('data-target') ?? undefined) : undefined;
   }
 
   private rowFrom(target: EventTarget | null): HTMLElement | undefined {
