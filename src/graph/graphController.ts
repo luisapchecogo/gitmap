@@ -1,10 +1,17 @@
-import { LaneLayout } from '../core/graphLayout';
+import { LaneLayout, LaneRow, MAX_LINE_ROWS } from '../core/graphLayout';
 import { CommitInfo } from '../core/logParser';
 import { GitRef, GraphFilter, refsByCommit, refsFingerprint, selectTips } from '../core/refsParser';
 import { isCancellation } from '../core/gitRunner';
 import { shortHash } from '../core/revision';
 import { CommitOrder, GitRepository } from '../git/repository';
 import { CommitRow, GraphStatus, HostMessage, ToolbarState } from '../shared/protocol';
+
+/** One page of history, with the commits that follow it. */
+interface Page {
+  commits: CommitInfo[];
+  following: CommitInfo[];
+  hasMore: boolean;
+}
 
 /** Where the controller sends its output (the webview, or a test). */
 export interface GraphSink {
@@ -177,6 +184,8 @@ export class GraphController {
         this.postToolbar();
       }
       this.tips = selectTips(refs, head.commit, this.filter);
+      // The first tip is HEAD, or the filtered branch: keep its line whole.
+      this.layout = new LaneLayout({ spine: this.tips[0] });
       this.loadedFingerprint = refsFingerprint(refs, head);
       this.badges = refsByCommit(refs);
       this.headCommit = head.commit;
@@ -184,7 +193,7 @@ export class GraphController {
       if (generation !== this.generation) {
         return;
       }
-      this.rows = page.commits.map((commit) => this.toRow(commit));
+      this.rows = this.toRows(page);
       this.hasMore = page.hasMore;
       this.status = this.rows.length === 0 ? { kind: 'empty' } : { kind: 'ready' };
       this.postReset();
@@ -276,7 +285,7 @@ export class GraphController {
       }
       // Rows are built only for the current load: building them advances
       // the lane layout, which a stale page must not touch.
-      const rows = page.commits.map((commit) => this.toRow(commit));
+      const rows = this.toRows(page);
       this.rows.push(...rows);
       this.hasMore = page.hasMore;
       this.sink?.post({ type: 'append', generation, rows, hasMore: page.hasMore });
@@ -292,14 +301,15 @@ export class GraphController {
     repository: GitRepository,
     skip: number,
     signal: AbortSignal,
-  ): Promise<{ commits: CommitInfo[]; hasMore: boolean }> {
+  ): Promise<Page> {
     const pageSize = Math.max(1, this.settings.pageSize());
+    // The commits after the page tell the layout which edges are too long
+    // to draw; they are fetched again as part of the next page.
     const commits = await repository.getLog(
-      { tips: this.tips, order: this.settings.commitOrder(), skip, maxCount: pageSize + 1 },
+      { tips: this.tips, order: this.settings.commitOrder(), skip, maxCount: pageSize + MAX_LINE_ROWS },
       { signal },
     );
-    const hasMore = commits.length > pageSize;
-    return { commits: commits.slice(0, pageSize), hasMore };
+    return { commits: commits.slice(0, pageSize), following: commits.slice(pageSize), hasMore: commits.length > pageSize };
   }
 
   private async countCommits(repository: GitRepository, generation: number, signal: AbortSignal): Promise<void> {
@@ -314,8 +324,12 @@ export class GraphController {
     }
   }
 
-  private toRow(commit: CommitInfo): CommitRow {
-    const lane = this.layout.next(commit);
+  private toRows(page: Page): CommitRow[] {
+    const lanes = this.layout.rows(page.commits, page.following);
+    return page.commits.map((commit, index) => this.toRow(commit, lanes[index]));
+  }
+
+  private toRow(commit: CommitInfo, lane: LaneRow): CommitRow {
     return {
       hash: commit.hash,
       shortHash: shortHash(commit.hash),

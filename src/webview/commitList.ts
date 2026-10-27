@@ -2,7 +2,7 @@ import { relativeDate } from '../shared/format';
 import { CommitRow } from '../shared/protocol';
 import { RefLabel, refLines } from '../shared/refLabels';
 import { h, icon } from './dom';
-import { GRAPH_METRICS, colorClass, renderGraphRow } from './graphSvg';
+import { GRAPH_METRICS, colorClass, renderGraphDefs, renderGraphRow } from './graphSvg';
 
 /** Labels shown per line before the rest collapse into a "+N" chip. */
 const MAX_LABELS = 2;
@@ -74,11 +74,18 @@ export class CommitList {
   constructor(
     private readonly onLoadMore: () => void,
     private readonly onOpen: (hash: string) => void,
+    /** A stub of a cut edge was clicked: go to the commit at its other end. */
+    private readonly onJump: (hash: string) => void,
   ) {
     this.element = h('div', 'list');
     this.element.tabIndex = 0;
     this.element.setAttribute('aria-label', 'Commits');
     this.element.addEventListener('click', (event) => {
+      const target = this.stubTarget(event.target);
+      if (target) {
+        this.onJump(target);
+        return;
+      }
       const row = this.rowFrom(event.target);
       if (row) {
         this.select(row);
@@ -86,7 +93,7 @@ export class CommitList {
     });
     this.element.addEventListener('dblclick', (event) => {
       const row = this.rowFrom(event.target);
-      if (row?.dataset.hash) {
+      if (row?.dataset.hash && !this.stubTarget(event.target)) {
         this.onOpen(row.dataset.hash);
       }
     });
@@ -101,7 +108,7 @@ export class CommitList {
     this.rowsElement = h('div', 'rows');
     this.rowsElement.setAttribute('role', 'list');
     this.sentinel = h('div', 'sentinel');
-    this.element.append(this.rowsElement, this.sentinel);
+    this.element.append(renderGraphDefs(), this.rowsElement, this.sentinel);
     this.observer = new IntersectionObserver((entries) => this.onIntersect(entries), {
       root: this.element,
       // Start loading well before the user reaches the end.
@@ -187,6 +194,10 @@ export class CommitList {
       this.requested = true;
       this.onLoadMore();
     }
+  }
+
+  private stubTarget(target: EventTarget | null): string | undefined {
+    return target instanceof Element ? (target.closest('.stub-hit')?.getAttribute('data-target') ?? undefined) : undefined;
   }
 
   private rowFrom(target: EventTarget | null): HTMLElement | undefined {

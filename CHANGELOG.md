@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Graph**: lines whose ends are more than 12 rows apart are cut into short stubs that fade out below the child and fade in above the parent, and at most four lanes stay open at once. On busy repositories the graph stays a few lanes wide instead of reaching dozens. The checked-out branch's line is never cut. This follows gitk's "hyperspace" lines and partial edge drawing from graph visualization research.
+
+### Added
+
+- **Graph**: click a stub to jump to the commit at the other end of its line, loading more history if needed.
+
 ## [0.2.0] - 2026-10-20
 
 A visual refresh of the Graph view.
