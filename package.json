@@ -2,7 +2,7 @@
   "name": "gitmap",
   "displayName": "GitMap",
   "description": "Compare any two commits and review every changed file, folder by folder, in an explorer-style view.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "luispacheco",
   "private": true,
   "license": "MIT",

@@ -17,7 +17,7 @@ GitMap is not on the Visual Studio Marketplace yet, so you install it from a `.v
 Or install it from a terminal (use `cursor`, `windsurf` or `codium` instead of `code` for those editors):
 
 ```sh
-code --install-extension ~/Downloads/gitmap-0.2.0.vsix
+code --install-extension ~/Downloads/gitmap-0.2.1.vsix
 ```
 
 On macOS, if `code` is not found, run **Shell Command: Install 'code' command in PATH** from the Command Palette once.
