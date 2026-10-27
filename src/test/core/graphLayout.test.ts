@@ -250,9 +250,33 @@ suite('LaneLayout', () => {
     assertEdgesDrawn(commits, rows, 2);
   });
 
+  test('once the lanes are full, new edges are cut even when short', () => {
+    const commits = [
+      { hash: 'a', parents: ['a0'] },
+      { hash: 'b', parents: ['b0'] },
+      { hash: 'c', parents: ['c0'] },
+      { hash: 'a0', parents: [] },
+      { hash: 'b0', parents: [] },
+      { hash: 'c0', parents: [] },
+    ];
+    const rows = layout(commits, { maxLanes: 2 });
+    assert.deepStrictEqual(rows.map(describe), [
+      '0 | out:0>0',
+      '1 | through:0>0 out:1>1',
+      // a and b hold both lanes: c's edge, three rows long, is cut.
+      '2 | through:0>0 through:1>1 stubOut:2>2',
+      '0 | in:0>0 through:1>0',
+      '0 | in:0>0',
+      '0 | stubIn:0>0',
+    ]);
+    assert.ok(rows.every((row) => row.bottom.length <= 2));
+    assertLayoutConsistent(rows);
+    assertEdgesDrawn(commits, rows, 3);
+  });
+
   test('paged layout equals whole-history layout when pages bring the rows that follow', () => {
     const commits = randomDag(200, 7);
-    const options = { maxLineRows: 4, spine: 'c0' };
+    const options = { maxLineRows: 4, maxLanes: 3, spine: 'c0' };
     const whole = layout(commits, options);
     assert.ok(whole.some((row) => row.edges.some(isStub)), 'the history has cut edges');
     const paged = new LaneLayout(options);
@@ -266,8 +290,11 @@ suite('LaneLayout', () => {
   test('random histories always produce consistent rows', () => {
     for (let seed = 1; seed <= 25; seed++) {
       const commits = randomDag(150, seed);
-      for (const maxLineRows of [3, 100]) {
-        const rows = layout(commits, { maxLineRows, spine: 'c0' });
+      for (const [maxLineRows, maxLanes] of [
+        [3, 3],
+        [100, 100],
+      ]) {
+        const rows = layout(commits, { maxLineRows, maxLanes, spine: 'c0' });
         assertLayoutConsistent(rows);
         assertEdgesDrawn(commits, rows, maxLineRows, 'c0');
       }

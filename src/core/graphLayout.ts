@@ -4,6 +4,9 @@
  */
 export const MAX_LINE_ROWS = 12;
 
+/** Most lanes kept open at once; edges that would open more are cut. */
+export const MAX_LANES = 4;
+
 /**
  * A line segment within one graph row.
  *
@@ -57,6 +60,8 @@ export interface LayoutOptions {
   spine?: string;
   /** Overrides MAX_LINE_ROWS (for tests). */
   maxLineRows?: number;
+  /** Overrides MAX_LANES (for tests). */
+  maxLanes?: number;
 }
 
 interface Lane {
@@ -90,7 +95,9 @@ interface CutEdge {
  * partial edge drawings in graph visualization. Long edges are few, but
  * each would hold a column for hundreds of rows; on busy repositories
  * they are what makes the graph dozens of lanes wide, while their ends
- * are rarely on screen together. The first-parent chain of the `spine`
+ * are rarely on screen together. Edges that would open a lane beyond
+ * `maxLanes` are cut too, like gitk's `maxwidth`, so a burst of merges
+ * cannot widen the graph either. The first-parent chain of the `spine`
  * commit is never cut.
  *
  * The layout is stateful, so feeding history page by page gives exactly
@@ -105,10 +112,12 @@ export class LaneLayout {
   /** The next commit of the spine's first-parent chain. */
   private spine: string | undefined;
   private readonly maxLineRows: number;
+  private readonly maxLanes: number;
 
   constructor(options: LayoutOptions = {}) {
     this.spine = options.spine;
     this.maxLineRows = options.maxLineRows ?? MAX_LINE_ROWS;
+    this.maxLanes = options.maxLanes ?? MAX_LANES;
   }
 
   /**
@@ -182,8 +191,11 @@ export class LaneLayout {
         outs.push({ slot: existing, color: index === 0 ? color : (slots[existing] as Lane).color });
         return;
       }
-      if (!near(parent) && !(index === 0 && onSpine)) {
-        // Too far to draw (or not loaded at all): cut the edge.
+      // A new lane, unless the edge continues the node's own lane.
+      const opens = index > 0 || matches.length === 0;
+      const full = opens && slots.filter((lane) => lane !== null).length >= this.maxLanes;
+      if ((full || !near(parent)) && !(index === 0 && onSpine)) {
+        // Too far to draw (or not loaded at all), or no room: cut the edge.
         const edge = { child: commit.hash, color: index === 0 ? color : this.nextColor++, firstParent: index === 0 };
         stubs.push({ color: edge.color, target: parent });
         const waiting = this.cut.get(parent);
